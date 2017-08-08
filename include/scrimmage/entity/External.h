@@ -73,6 +73,7 @@ class External {
 
  protected:
     std::vector<ros::Subscriber> ros_subs_;
+    std::vector<ros::ServiceServer> ros_service_servers_;
     std::vector<std::function<void()>> ros_pub_funcs_;
 
  public:
@@ -122,6 +123,46 @@ class External {
         };
 
         ros_pub_funcs_.push_back(func);
+    }
+
+    template <class RosType, class ScrimmageResponseType, class ScServiceFunc, class Ros2ScRequestFunc, class Sc2RosResponseFunc>
+    void advertise_service(
+        ros::NodeHandle &nh,
+        const std::string &service_name,
+        Ros2ScRequestFunc ros2sc_request_func,
+        ScServiceFunc sc_service_func,
+        Sc2RosResponseFunc sc2ros_response_func,
+        std::function<bool(typename RosType::Request&)> pre_func = [](typename RosType::Request&){return true;},
+        std::function<bool(typename RosType::Response&)> post_func = [](typename RosType::Response&){return true;}) {
+
+        boost::function<bool(typename RosType::Request &, typename RosType::Response &)> callback =
+            [=](typename RosType::Request &ros_req, typename RosType::Response &ros_res) {
+                if (!pre_func(ros_req)) {
+                    return false;
+                }
+
+                auto sc_req = ros2sc_request_func(ros_req);
+
+                auto sc_req_base = std::dynamic_pointer_cast<scrimmage::MessageBase>(sc_req);
+                auto sc_res_base = std::make_shared<scrimmage::MessageBase>();
+                if (!sc_req_base || !sc_service_func(sc_req_base, sc_res_base)) {
+                    return false;
+                }
+
+                auto sc_res = std::dynamic_pointer_cast<ScrimmageResponseType>(sc_res_base);
+                if (!sc_res) {
+                    return false;
+                }
+
+                ros_res = sc2ros_response_func(sc_res);
+                if (!post_func(ros_res)) {
+                    return false;
+                }
+                return true;
+            };
+
+        ros::ServiceServer srv = nh.advertiseService(service_name.c_str(), callback);
+        ros_service_servers_.push_back(srv);
     }
 
 #endif
