@@ -29,8 +29,8 @@
  * A Long description goes here.
  *
  */
-#ifndef EXTERNAL_H_
-#define EXTERNAL_H_
+#ifndef INCLUDE_SCRIMMAGE_ENTITY_EXTERNAL_H_
+#define INCLUDE_SCRIMMAGE_ENTITY_EXTERNAL_H_
 
 #include <scrimmage/fwd_decl.h>
 #include <scrimmage/common/ID.h>
@@ -75,6 +75,7 @@ class External {
     std::vector<ros::Subscriber> ros_subs_;
     std::vector<ros::ServiceServer> ros_service_servers_;
     std::vector<std::function<void()>> ros_pub_funcs_;
+    std::vector<ros::ServiceClient> ros_service_clients_;
 
  public:
     void publish_all() {
@@ -165,9 +166,44 @@ class External {
         ros_service_servers_.push_back(srv);
     }
 
+    template <class RosServiceType, class ScrimmageReqType,
+            class Sc2RosRequestFunc, class Ros2ScResponseFunc>
+    add_service(ros::NodeHandle &nh,
+        Sc2RosRequestFunc sc2ros_request_func,
+        Ros2ScResponseFunc ros2sc_response_func,
+        const std::string &sc_topic,
+        const std::string &ros_topic = "") {
+
+        ros::ServiceClient service_client =
+            nh.serviceClient<RosServiceType>(ros_topic == "" ? sc_topic : ros_topic);
+        ros_service_servers_.push_back(service_client);
+
+        auto call_service =
+            [=](scrimmage::MessageBasePtr sc_req, scrimmage::MessageBasePtr &sc_res) {
+                auto sc_req_cast =
+                    std::dynamic_pointer_cast<ScrimmageReqType>(sc_req);
+                if (!sc_req_cast) {
+                    return false;
+                }
+
+                RosServiceType srv;
+                srv.request = sc2ros_request_func(sc_req_cast);
+
+                if (!service_client.call(srv)) {
+                    return false;
+                }
+
+                sc_res = ros2sc_response_func(srv.response);
+
+                return true;
+            };
+
+        entity_->services()[sc_topic] = call_service;
+    }
+
 #endif
 };
 
 } // namespace scrimmage
 
-#endif // EXTERNAL_H_
+#endif // INCLUDE_SCRIMMAGE_ENTITY_EXTERNAL_H_
