@@ -29,39 +29,32 @@
  * A Long description goes here.
  *
  */
+#ifndef INCLUDE_SCRIMMAGE_NETWORK_EXTERNALCONTROL_H_
+#define INCLUDE_SCRIMMAGE_NETWORK_EXTERNALCONTROL_H_
 
-#include <scrimmage/metrics/Metrics.h>
-#include <scrimmage/proto/Frame.pb.h>
+#if ENABLE_GRPC == 1
+#include <grpc++/grpc++.h>
+#endif
 
-#include <limits>
-
-#include <boost/optional.hpp>
+#include <thread>  // NOLINT
+#include <list>
 
 namespace scrimmage {
+class ExternalControl final : public scrimmage_proto::ExternalControl::Service {
+ public:
+    ExternalControl(std::shared_ptr<SimControl> sim_control, int port);
 
-std::string Metrics::name() { return std::string("Metrics"); }
+    std::list<EntityPtr> controlled_ents;
+    std::mutex mutex;
+    std::condition_variable condition_variable;
+    std::atomic<bool> ready = false;
 
-void Metrics::init(std::map<std::string, std::string> &params) {}
+ private:
+    grpc::Status ExternalControl::GetEnvironment(
+            grpc::ServerContext* context,
+            const google::protobuf::Empty *request,
+            scrimmage_proto::Environment *reply);
+};
 
-bool Metrics::step_metrics(double t, double dt) { return false; }
-
-void Metrics::set_team_lookup(
-        std::shared_ptr<std::unordered_map<int, int>> &lookup) {
-    team_lookup_ = lookup;
-}
-
-void Metrics::calc_team_scores() {}
-
-void Metrics::print_team_summaries() {}
-
-std::map<int, std::map<std::string, double> > &Metrics::team_metrics()
-{ return team_metrics_; }
-
-std::list<std::string> &Metrics::headers() { return headers_; }
-
-std::map<int, double> &Metrics::team_scores() { return team_scores_; }
-
-boost::optional<std::pair<double, double>> Metrics::reward_range() {
-    return boost::none;
-}
 }  // namespace scrimmage
+#endif  // INCLUDE_SCRIMMAGE_NETWORK_EXTERNALCONTROL_H_

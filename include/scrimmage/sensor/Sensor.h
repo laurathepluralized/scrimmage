@@ -39,6 +39,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include <boost/optional.hpp>
 
@@ -58,6 +60,9 @@ class Sensor : public Plugin {
     boost::optional<MessageBasePtr> sense(double t) {
         return sensor_msg(t);
     }
+
+    virtual boost::optional<std::vector<std::tuple<double, double, bool, std::string>>>
+    observation_space() {return boost::none;}
 
     template <class T = MessageBase,
               class = typename std::enable_if<!std::is_same<T, MessageBase>::value, void>::type>

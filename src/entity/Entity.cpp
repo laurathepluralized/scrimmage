@@ -68,6 +68,10 @@ bool Entity::init(AttributeMap &overrides,
                   NetworkPtr network,
                   FileSearch &file_search,
                   RTreePtr &rtree) {
+
+    externally_controlled_ =
+        get("externally_controlled", info, std::string("false"));
+
     contacts_ = contacts;
     rtree_ = rtree;
 
@@ -123,7 +127,6 @@ bool Entity::init(AttributeMap &overrides,
         motion_model_->set_state(state_);
         motion_model_->set_parent(parent);
         motion_model_->set_network(network);
-        // cout << "Warning: Missing motion model tag, initializing with base class" << endl;
     } else {
         motion_model_ =
             std::dynamic_pointer_cast<MotionModel>(
@@ -132,7 +135,8 @@ bool Entity::init(AttributeMap &overrides,
                     overrides["motion_model"]));
 
         if (motion_model_ == nullptr) {
-            cout << "Failed to open motion model plugin: " << info["motion_model"] << endl;
+            cout << "Failed to open motion model plugin: "
+                << info["motion_model"] << endl;
             return false;
         }
 
@@ -171,6 +175,7 @@ bool Entity::init(AttributeMap &overrides,
         sensors_[sensor_name] = sensor;
 
         sensor_order_name = std::string("sensor") + std::to_string(++sensor_ct);
+
     }
 
     ////////////////////////////////////////////////////////////
@@ -253,7 +258,8 @@ bool Entity::init(AttributeMap &overrides,
                     overrides[ctrl_name]));
 
         if (controller == nullptr) {
-            std::cout << "Failed to open controller plugin: " << info[ctrl_name] << std::endl;
+            std::cout << "Failed to open controller plugin: "
+                << info[ctrl_name] << std::endl;
             return false;
         }
 
@@ -296,7 +302,8 @@ bool Entity::parse_visual(std::map<std::string, std::string> &info,
 
     if (mesh_found) {
         type_ = Contact::Type::MESH;
-        visual_->set_visual_mode(texture_found ? scrimmage_proto::ContactVisual::TEXTURE : scrimmage_proto::ContactVisual::COLOR);
+        visual_->set_visual_mode(texture_found ?
+            sp::ContactVisual::TEXTURE : sp::ContactVisual::COLOR);
     } else if (visual_model == std::string("QUADROTOR")) {
         type_ = Contact::Type::QUADROTOR;
         visual_->set_visual_mode(scrimmage_proto::ContactVisual::COLOR);
@@ -451,4 +458,23 @@ bool Entity::call_service(scrimmage::MessageBasePtr req,
     }
 }
 
-} // namespace scrimmage
+std::vector<std::tuple<double, double, bool, std::string>>
+Entity::observation_space() {
+    std::vector<std::tuple<double, double, bool, std::string>> out;
+    for (SensorPtr sensor : sensors_) {
+        auto space = sensor->observation_space();
+        out.insert(out.end(), space.begin(), space.end());
+    }
+    return out;
+}
+
+bool Entity::externally_controlled() const {
+    return externally_controlled_;
+}
+
+bool Entity::set_externally_controlled(bool externally_controlled) {
+    externally_controlled_ = externally_controlled;
+}
+
+
+}  // namespace scrimmage

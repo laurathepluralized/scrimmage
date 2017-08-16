@@ -74,7 +74,6 @@ std::string Autonomy::type() { return std::string("Autonomy"); }
 
 bool Autonomy::step_autonomy(double t, double dt) { return false; }
 bool Autonomy::posthumous(double t) { return true; }
-void Autonomy::init() {}
 void Autonomy::init(std::map<std::string, std::string> &params) {}
 bool Autonomy::need_reset() {return need_reset_;}
 

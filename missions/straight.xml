@@ -87,6 +87,7 @@
     <count>30</count>
     <health>1</health>
     <radius>2</radius>
+    <is_controlled>true</is_controlled>
 
     <!--
     <generate_rate> 1 / 2 </generate_rate>

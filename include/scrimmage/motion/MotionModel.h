@@ -54,11 +54,13 @@ class MotionModel : public Plugin {
     virtual bool init(std::map<std::string, std::string> &info,
                       std::map<std::string, std::string> &params);
 
+    virtual scrimmage_proto::ActionSpace action_space() = 0;
     virtual bool step(double time, double dt);
     virtual bool posthumous(double t);
     virtual StatePtr &state();
     virtual void set_state(StatePtr &state);
     virtual void teleport(StatePtr &state);
+
     virtual void set_external_force(Eigen::Vector3d force);
     virtual void set_mass(double mass) { mass_ = mass; }
     virtual double mass() { return mass_; }
@@ -76,5 +78,5 @@ class MotionModel : public Plugin {
 };
 
 using MotionModelPtr = std::shared_ptr<MotionModel>;
-} // namespace scrimmage
-#endif // INCLUDE_SCRIMMAGE_MOTION_MOTIONMODEL_H_
+}  // namespace scrimmage
+#endif  // INCLUDE_SCRIMMAGE_MOTION_MOTIONMODEL_H_

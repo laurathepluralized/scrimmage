@@ -303,6 +303,18 @@ bool SimControl::init() {
 
     generate_entities(0);
 
+    std::copy_if(ents_.begin(), ents_.end(),
+        std::back_inserter(external_control_.controlled_ents),
+        [&](auto &ent) {return ent->get_externally_controlled();});
+
+    if (!external_control_.controlled_ents.empty()) {
+        std::string server_address =
+            get("external_control_address", mp_->params(), "localhost:50051");
+        external_control_ = ExternalControl(grpc::CreateChannel(
+              server_address, grpc::InsecureChannelCredentials()));
+        external_control_.send_environment();
+    }
+
     if (get("show_plugins", mp_->params(), false)) {
         plugin_manager_->print_returned_plugins();
     }
@@ -325,42 +337,43 @@ bool SimControl::init() {
 
 bool SimControl::generate_entities(double t) {
     // Initialize each entity
-    for (EntityDesc_t::iterator it = mp_->entity_descriptions().begin();
-         it != mp_->entity_descriptions().end(); ++it) {
+    for (auto &kv : mp_->entity_descriptions()) {
+
+        int xml_des_id = kv.first;
+        std::map<std::string, std::string> &params = kv.second;
 
         // Determine if we have to generate entities for this entity
         // description
-        if (mp_->gen_info().count(it->first) == 0) {
+        if (mp_->gen_info().count(xml_des_id) == 0) {
             continue;
         }
 
         // Generate entities if time has been reached
         int gen_count = 0;
-        for (std::vector<double>::iterator time_it = mp_->next_gen_times()[it->first].begin();
-             time_it != mp_->next_gen_times()[it->first].end(); ++time_it) {
-            if (t >= *time_it && mp_->gen_info()[it->first].total_count > 0) {
-                double x_var = scrimmage::get("variance_x", it->second, 100.0);
-                double y_var = scrimmage::get("variance_y", it->second, 100.0);
-                double z_var = scrimmage::get("variance_z", it->second, 0.0);
+        for (double &gen_time : mp_->next_gen_times()[xml_des_id]) {
+            if (t >= gen_time && mp_->gen_info()[xml_des_id].total_count > 0) {
+                double x_var = scrimmage::get("variance_x", params, 100.0);
+                double y_var = scrimmage::get("variance_y", params, 100.0);
+                double z_var = scrimmage::get("variance_z", params, 0.0);
 
 #if ENABLE_JSBSIM == 1
-                it->second["JSBSIM_ROOT"] = jsbsim_root_;
+                params["JSBSIM_ROOT"] = jsbsim_root_;
 #endif
 
-                it->second["dt"] = std::to_string(dt_);
+                params["dt"] = std::to_string(dt_);
                 double motion_multiplier = mp_->motion_multiplier();
-                it->second["motion_multiplier"] = std::to_string(motion_multiplier);
+                params["motion_multiplier"] = std::to_string(motion_multiplier);
 
-                double x0 = scrimmage::get("x0", it->second, 0);
-                double y0 = scrimmage::get("y0", it->second, 0);
-                double z0 = scrimmage::get("z0", it->second, 0);
+                double x0 = scrimmage::get("x0", params, 0);
+                double y0 = scrimmage::get("y0", params, 0);
+                double z0 = scrimmage::get("z0", params, 0);
 
                 Eigen::Vector3d pos(x0, y0, z0);
 
                 // Use variance if not the first entity in this group, or if a
                 // collision exists (This happens when you place <entity> tags"
                 // at the same location).
-                if (!mp_->gen_info()[it->first].first_in_group ||
+                if (!mp_->gen_info()[xml_des_id].first_in_group ||
                     collision_exists(pos)) {
                     // Use the uniform distribution to place aircraft
                     // within the x/y variance
@@ -388,27 +401,27 @@ bool SimControl::generate_entities(double t) {
                         collision_count++;
                     } while (exists);
 
-                    it->second["x"] = std::to_string(pos(0));
-                    it->second["y"] = std::to_string(pos(1));
-                    it->second["z"] = std::to_string(pos(2));
+                    params["x"] = std::to_string(pos(0));
+                    params["y"] = std::to_string(pos(1));
+                    params["z"] = std::to_string(pos(2));
                 } else {
-                    mp_->gen_info()[it->first].first_in_group = false;
+                    mp_->gen_info()[xml_des_id].first_in_group = false;
                 }
 
                 // Fill in the ent's lat/lon/alt value
                 double lat, lon, alt;
                 proj_->Reverse(pos(0), pos(1), pos(2), lat, lon, alt);
-                it->second["latitude"] = std::to_string(lat);
-                it->second["longitude"] = std::to_string(lon);
-                it->second["altitude"] = std::to_string(alt);
+                params["latitude"] = std::to_string(lat);
+                params["longitude"] = std::to_string(lon);
+                params["altitude"] = std::to_string(alt);
 
                 std::shared_ptr<Entity> ent = std::make_shared<Entity>();
                 ent->set_random(random_);
 
                 contacts_mutex_.lock();
-                AttributeMap &attr_map = mp_->entity_attributes()[it->first];
-                bool ent_status = ent->init(attr_map, it->second,
-                    contacts_, mp_, proj_, next_id_, it->first,
+                AttributeMap &attr_map = mp_->entity_attributes()[xml_des_id];
+                bool ent_status = ent->init(attr_map, params,
+                    contacts_, mp_, proj_, next_id_, xml_des_id,
                     plugin_manager_, network_, file_search_, rtree_);
                 contacts_mutex_.unlock();
 
@@ -443,20 +456,20 @@ bool SimControl::generate_entities(double t) {
                 pubsub_->pubs()["EntityGenerated"]->publish(msg, t);
 
                 next_id_++;
-                mp_->gen_info()[it->first].total_count--;
+                mp_->gen_info()[xml_des_id].total_count--;
 
                 // Is rate generation enabled?
-                if (mp_->gen_info()[it->first].rate > 0) {
-                    *time_it = t + (1.0 / mp_->gen_info()[it->first].rate) + random_->rng_normal()*mp_->gen_info()[it->first].time_variance;
-                    if (*time_it <= t) {
+                if (mp_->gen_info()[xml_des_id].rate > 0) {
+                    gen_time = t + (1.0 / mp_->gen_info()[xml_des_id].rate) + random_->rng_normal()*mp_->gen_info()[xml_des_id].time_variance;
+                    if (gen_time <= t) {
                         cout << "Next generation time less than current time. "
                              << "generate_time_variance is too large." << endl;
-                        *time_it = t + (1.0 / mp_->gen_info()[it->first].rate);
+                        gen_time = t + (1.0 / mp_->gen_info()[xml_des_id].rate);
                     }
                 }
                 gen_count++;
 
-                if (gen_count >= mp_->gen_info()[it->first].gen_count) {
+                if (gen_count >= mp_->gen_info()[xml_des_id].gen_count) {
                     break;
                 }
             }
@@ -594,6 +607,9 @@ void SimControl::run() {
     set_time(t0_);
     bool end_condition_interaction;
 
+
+    wait_for_external_control();
+
     do {
         double t = this->t();
         start_loop_timer();
@@ -621,7 +637,6 @@ void SimControl::run() {
         // Interaction plugins use publish_immediate, so subs will have
         // newest messages
         run_logging();
-
         run_remove_inactive();
         run_send_shapes();
         run_send_contact_visuals(); // send updated visuals
@@ -1125,4 +1140,55 @@ void SimControl::run_send_contact_visuals() {
         }
     }
 }
+
+void SimControl::start_external_control(const std::string server_address) {
+    // start server if there are controlled entities
+    external_control_.ready = false;
+
+    grpc::ServerBuilder builder;
+    builder.AddListeningPort(address, grpc::InsecureServerCredentials());
+    builder.RegiserService(&external_control_);
+    std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+    std::cout << "External Control Server listening on " << server_address << std::endl;
+    server->Wait();
+}
+
+void wait_for_external_control() {
+    if (!external_control_.controlled_ents.empty()) {
+        std::unique_lock<std::mutex> unique_lock(external_control_.mutex);
+        external_control_.condition_variable.wait_for(unique_lock,
+            std::chrono::seconds(10),
+            [&]() {return external_control_.ready;});
+        external_control_.ready = true;
+    }
+}
+
+void send_environment() {
+    sp::Environment env;
+
+    std::pair<double, double> rewards {0, 0};
+    for (auto metric : metrics_) {
+        auto reward_range = metric->reward_range();
+        if (reward) {
+            rewards.first += reward->first;
+            rewards.second += reward->second;
+        }
+    }
+
+    env.set_min_reward(rewards.first);
+    env.set_max_reward(rewards.second);
+
+    for (EntityPtr ent : ents_) {
+        *env.add_action_space() = ent->motion()->action_space();
+        for (auto &kv : ent->sensors()) {
+            auto obs_space = kv.second->observation_space();
+            if (obs_space) {
+                *env.add_observation_space() = *obs_space;
+            }
+        }
+    }
+
+    external_control_.SendEnvironment(env);
+}
+
 } // namespace scrimmage

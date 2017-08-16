@@ -29,39 +29,48 @@
  * A Long description goes here.
  *
  */
+syntax = "proto3";
 
-#include <scrimmage/metrics/Metrics.h>
-#include <scrimmage/proto/Frame.pb.h>
+option java_multiple_files = true;
+option java_package = "com.syllo.scrimmage";
 
-#include <limits>
+import "scrimmage/proto/State.proto";
 
-#include <boost/optional.hpp>
+package scrimmage_proto;
 
-namespace scrimmage {
-
-std::string Metrics::name() { return std::string("Metrics"); }
-
-void Metrics::init(std::map<std::string, std::string> &params) {}
-
-bool Metrics::step_metrics(double t, double dt) { return false; }
-
-void Metrics::set_team_lookup(
-        std::shared_ptr<std::unordered_map<int, int>> &lookup) {
-    team_lookup_ = lookup;
+service ExternalControl {
+  rpc SendEnvironment (Environment) returns (Action) {}
+  rpc SendActionResult (ActionResult) returns (Action) {}
 }
 
-void Metrics::calc_team_scores() {}
-
-void Metrics::print_team_summaries() {}
-
-std::map<int, std::map<std::string, double> > &Metrics::team_metrics()
-{ return team_metrics_; }
-
-std::list<std::string> &Metrics::headers() { return headers_; }
-
-std::map<int, double> &Metrics::team_scores() { return team_scores_; }
-
-boost::optional<std::pair<double, double>> Metrics::reward_range() {
-    return boost::none;
+message DiscreteSpace {
+    int32 minimum = 1;
+    int32 maximum = 2;
 }
-}  // namespace scrimmage
+
+message ContinuousSpace {
+    double minimum = 1;
+    double maximum = 2;
+}
+
+message Space {
+    repeated DiscreteSpace discrete = 1;
+    repeated ContinuousSpace continuous = 2;
+}
+
+message Environment {
+    Space action_space = 1;
+    Space observation_space = 2;
+    double min_reward = 3;
+    double max_reward = 4;
+}
+
+message Action {
+    repeated State states = 1;
+}
+
+message ActionResult {
+    SpaceSample observation = 1;
+    double reward = 2;
+    bool done = 3;
+}
