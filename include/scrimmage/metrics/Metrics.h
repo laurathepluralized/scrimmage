@@ -38,9 +38,6 @@
 #include <unordered_map>
 #include <list>
 #include <string>
-#include <tuple>
-
-#include <boost/optional.hpp>
 
 namespace scrimmage {
 
@@ -64,8 +61,6 @@ class Metrics : public Plugin{
     virtual std::list<std::string> &headers();
 
     virtual std::map<int, double> &team_scores();
-
-    virtual boost::optional<std::pair<double, double>> reward_range();
 
  protected:
     std::string weights_file_;

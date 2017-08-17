@@ -42,10 +42,8 @@ MotionModel::MotionModel() : mass_(1.0) {}
 
 std::string MotionModel::type() { return std::string("MotionModel"); }
 
-bool MotionModel::init(std::map<std::string, std::string> &info,
-                       std::map<std::string, std::string> &params) {
-    return false;
-}
+bool MotionModel::init(std::map<std::string, std::string> &info, std::map<std::string, std::string> &params)
+{ return false; }
 
 bool MotionModel::step(double time, double dt) { return false; }
 
@@ -63,9 +61,7 @@ void MotionModel::ode_step(double dt) {
     stepper.do_step(sys, x_, 0, dt);
 }
 
-void MotionModel::model(const MotionModel::vector_t &x,
-                        MotionModel::vector_t &dxdt,
-                        double t) {}
+void MotionModel::model(const MotionModel::vector_t &x, MotionModel::vector_t &dxdt, double t) {}
 
 void MotionModel::set_external_force(Eigen::Vector3d force) {
     ext_force_ = force;

@@ -35,7 +35,6 @@
 
 #include <limits>
 
-#include <boost/optional.hpp>
 
 namespace scrimmage {
 
@@ -45,8 +44,7 @@ void Metrics::init(std::map<std::string, std::string> &params) {}
 
 bool Metrics::step_metrics(double t, double dt) { return false; }
 
-void Metrics::set_team_lookup(
-        std::shared_ptr<std::unordered_map<int, int>> &lookup) {
+void Metrics::set_team_lookup(std::shared_ptr<std::unordered_map<int, int>> &lookup) {
     team_lookup_ = lookup;
 }
 
@@ -61,7 +59,4 @@ std::list<std::string> &Metrics::headers() { return headers_; }
 
 std::map<int, double> &Metrics::team_scores() { return team_scores_; }
 
-boost::optional<std::pair<double, double>> Metrics::reward_range() {
-    return boost::none;
-}
 }  // namespace scrimmage

@@ -23,7 +23,6 @@ endif()
 foreach(PROTO_FILE ${PROTO_FILE_LIST})    
   # Get the name of the file without extension
   # name.proto -> name
-  message("proto: ${PROTO_FILE}")
   get_filename_component(PROTO_NAME ${PROTO_FILE} NAME_WE)
   get_filename_component(ABS_PROTO_NAME ${PROTO_FILE} REALPATH)
 

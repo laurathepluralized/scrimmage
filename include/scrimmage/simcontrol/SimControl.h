@@ -135,16 +135,12 @@ class SimControl {
     void set_outgoing_interface(InterfacePtr &outgoing_interface);
 
  protected:
-    void start_external_control(std::string address);
-
     // Key: Entity ID
     // Value: Team ID
     std::shared_ptr<std::unordered_map<int, int> > team_lookup_;
 
     InterfacePtr incoming_interface_;
     InterfacePtr outgoing_interface_;
-    ExternalControl external_control_;
-    std::thread external_control_thread_;
 
     std::thread network_thread_;
 

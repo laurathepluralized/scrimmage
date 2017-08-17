@@ -303,18 +303,6 @@ bool SimControl::init() {
 
     generate_entities(0);
 
-    std::copy_if(ents_.begin(), ents_.end(),
-        std::back_inserter(external_control_.controlled_ents),
-        [&](auto &ent) {return ent->get_externally_controlled();});
-
-    if (!external_control_.controlled_ents.empty()) {
-        std::string server_address =
-            get("external_control_address", mp_->params(), "localhost:50051");
-        external_control_ = ExternalControl(grpc::CreateChannel(
-              server_address, grpc::InsecureChannelCredentials()));
-        external_control_.send_environment();
-    }
-
     if (get("show_plugins", mp_->params(), false)) {
         plugin_manager_->print_returned_plugins();
     }
@@ -607,9 +595,6 @@ void SimControl::run() {
     set_time(t0_);
     bool end_condition_interaction;
 
-
-    wait_for_external_control();
-
     do {
         double t = this->t();
         start_loop_timer();
@@ -637,6 +622,7 @@ void SimControl::run() {
         // Interaction plugins use publish_immediate, so subs will have
         // newest messages
         run_logging();
+
         run_remove_inactive();
         run_send_shapes();
         run_send_contact_visuals(); // send updated visuals
@@ -1140,55 +1126,4 @@ void SimControl::run_send_contact_visuals() {
         }
     }
 }
-
-void SimControl::start_external_control(const std::string server_address) {
-    // start server if there are controlled entities
-    external_control_.ready = false;
-
-    grpc::ServerBuilder builder;
-    builder.AddListeningPort(address, grpc::InsecureServerCredentials());
-    builder.RegiserService(&external_control_);
-    std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-    std::cout << "External Control Server listening on " << server_address << std::endl;
-    server->Wait();
-}
-
-void wait_for_external_control() {
-    if (!external_control_.controlled_ents.empty()) {
-        std::unique_lock<std::mutex> unique_lock(external_control_.mutex);
-        external_control_.condition_variable.wait_for(unique_lock,
-            std::chrono::seconds(10),
-            [&]() {return external_control_.ready;});
-        external_control_.ready = true;
-    }
-}
-
-void send_environment() {
-    sp::Environment env;
-
-    std::pair<double, double> rewards {0, 0};
-    for (auto metric : metrics_) {
-        auto reward_range = metric->reward_range();
-        if (reward) {
-            rewards.first += reward->first;
-            rewards.second += reward->second;
-        }
-    }
-
-    env.set_min_reward(rewards.first);
-    env.set_max_reward(rewards.second);
-
-    for (EntityPtr ent : ents_) {
-        *env.add_action_space() = ent->motion()->action_space();
-        for (auto &kv : ent->sensors()) {
-            auto obs_space = kv.second->observation_space();
-            if (obs_space) {
-                *env.add_observation_space() = *obs_space;
-            }
-        }
-    }
-
-    external_control_.SendEnvironment(env);
-}
-
 } // namespace scrimmage

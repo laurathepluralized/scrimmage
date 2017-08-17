@@ -44,7 +44,6 @@
 #include <string>
 #include <functional>
 #include <memory>
-#include <tuple>
 
 namespace scrimmage_proto {
 using ContactVisualPtr = std::shared_ptr<ContactVisual>;
@@ -52,7 +51,7 @@ using ContactVisualPtr = std::shared_ptr<ContactVisual>;
 
 namespace scrimmage {
 
-using Service = std::function<bool(scrimmage::MessageBasePtr, scrimmage::MessageBasePtr&)>;
+using Service = std::function<bool (scrimmage::MessageBasePtr, scrimmage::MessageBasePtr&)>;
 
 typedef std::map<std::string, std::map<std::string, std::string>> AttributeMap;
 
@@ -84,11 +83,7 @@ class Entity : public std::enable_shared_from_this<Entity> {
     void setup_desired_state();
     bool ready();
 
-    std::vector<std::tuple<double, double, bool, std::string>>
-    observation_space();
-
-    bool call_service(MessageBasePtr req,
-            MessageBasePtr &res, std::string service_name);
+    bool call_service(MessageBasePtr req, MessageBasePtr &res, std::string service_name);
     ///@}
 
     /*! \name getters/setters */
@@ -128,9 +123,6 @@ class Entity : public std::enable_shared_from_this<Entity> {
     RTreePtr &rtree() { return rtree_; }
 
     double radius() { return radius_; }
-
-    bool externally_controlled() const;
-    bool set_externally_controlled(bool externally_controlled);
     ///@}
 
  protected:
@@ -153,8 +145,6 @@ class Entity : public std::enable_shared_from_this<Entity> {
     std::shared_ptr<GeographicLib::LocalCartesian> proj_;
 
     RandomPtr random_;
-
-    bool externally_controlled_;
 
     StatePtr state_;
     std::unordered_map<std::string, std::list<SensablePtr>> sensables_;
