@@ -63,6 +63,8 @@ class MotionModel : public Plugin {
     virtual void set_mass(double mass) { mass_ = mass; }
     virtual double mass() { return mass_; }
 
+    virtual scrimmage_proto::SpaceParams action_space_params() = 0;
+
  protected:
     void ode_step(double dt);
     virtual void model(const vector_t &x , vector_t &dxdt , double t);

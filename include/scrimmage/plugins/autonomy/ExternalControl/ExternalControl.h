@@ -29,32 +29,26 @@
  * A Long description goes here.
  *
  */
-#ifndef INCLUDE_SCRIMMAGE_NETWORK_EXTERNALCONTROL_H_
-#define INCLUDE_SCRIMMAGE_NETWORK_EXTERNALCONTROL_H_
 
-#if ENABLE_GRPC == 1
-#include <grpc++/grpc++.h>
-#endif
+#ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_
+#define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_
+#include <scrimmage/autonomy/Autonomy.h>
+#include <scrimmage/plugins/autonomy/ExternalControlClient.h>
 
-#include <thread>  // NOLINT
-#include <list>
+#include <Eigen/Dense>
 
-namespace scrimmage {
-class ExternalControl final : public scrimmage_proto::ExternalControl::Service {
+#include <map>
+#include <string>
+
+class ExternalControl : public scrimmage::Autonomy {
  public:
-    ExternalControl(std::shared_ptr<SimControl> sim_control, int port);
+     virtual void init(std::map<std::string, std::string> &params);
+     virtual bool step_autonomy(double t, double dt);
 
-    std::list<EntityPtr> controlled_ents;
-    std::mutex mutex;
-    std::condition_variable condition_variable;
-    std::atomic<bool> ready = false;
+ protected:
+    scrimmage_proto::Environment get_env();
+    ExternalControlClient external_control_client_;
 
- private:
-    grpc::Status ExternalControl::GetEnvironment(
-            grpc::ServerContext* context,
-            const google::protobuf::Empty *request,
-            scrimmage_proto::Environment *reply);
 };
 
-}  // namespace scrimmage
-#endif  // INCLUDE_SCRIMMAGE_NETWORK_EXTERNALCONTROL_H_
+#endif // INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_

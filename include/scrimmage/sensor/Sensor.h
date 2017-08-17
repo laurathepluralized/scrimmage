@@ -61,8 +61,7 @@ class Sensor : public Plugin {
         return sensor_msg(t);
     }
 
-    virtual boost::optional<std::vector<std::tuple<double, double, bool, std::string>>>
-    observation_space() {return boost::none;}
+    virtual scrimmage_proto::SpaceParams observation_space_params() = 0;
 
     template <class T = MessageBase,
               class = typename std::enable_if<!std::is_same<T, MessageBase>::value, void>::type>

@@ -29,44 +29,26 @@
  * A Long description goes here.
  *
  */
-syntax = "proto3";
+#ifndef EXT
 
-option java_multiple_files = true;
-option java_package = "com.syllo.scrimmage";
+#include <grpc++/grpc++.h>
 
-import "scrimmage/proto/State.proto";
+#include <map>
+#include <string>
 
-package scrimmage_proto;
+class ExternalControlClient {
+ public:
+    explicit ExternalControlClient(std::shared_ptr<grpc::Channel> channel) :
+        stub_(ExternalControlClient::NewStub(channel)) {}
 
-service ExternalControl {
-  rpc SendEnvironment (Environment) returns (State) {}
-  rpc SendActionResult (ActionResult) returns (State) {}
-}
+    bool send_environment(scrimmage_proto::Environment &env,
+                          scrimmage::State &state);
 
-message SingleSpaceParams {
-    int32 num_dims = 1;
-    repeated double minimum = 2;
-    repeated double maximum = 3;
-    bool discrete = 4;
-}
+    bool send_action_result(scrimmage_proto::ActionResult &action_result,
+                            scrimmage::State &state);
+ protected:
+    std::unique_ptr<ExternalControl::Stub> stub_;
 
-message SpaceParams {
-    repeated SingleSpaceParams params = 1;
-}
+};
 
-message Environment {
-    SpaceParams action_spaces = 1;
-    SpaceParams observation_spaces = 2;
-    double min_reward = 3;
-    double max_reward = 4;
-}
-
-message SpaceSample {
-    repeated double value = 1;
-}
-
-message ActionResult {
-    SpaceSample observations = 1;
-    double reward = 2;
-    bool done = 3;
-}
+#endif

@@ -55,6 +55,7 @@ using std::cout;
 using std::endl;
 namespace fs = boost::filesystem;
 namespace sp = scrimmage_proto;
+namespace pl = std::placeholders;
 
 namespace scrimmage {
 
@@ -140,6 +141,9 @@ bool Entity::init(AttributeMap &overrides,
         motion_model_->set_network(network);
         motion_model_->init(info, config_parse.params());
     }
+
+    services_["action_space"] =
+        std::bind(&MotionModel::action_space, motion_model_, pl::_1, pl::_2);
 
     ////////////////////////////////////////////////////////////
     // sensor
