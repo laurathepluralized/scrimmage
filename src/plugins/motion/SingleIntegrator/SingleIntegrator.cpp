@@ -105,3 +105,14 @@ void SingleIntegrator::model(const vector_t &x , vector_t &dxdt , double t) {
     dxdt[Y] = ctrl_u_(Y);
     dxdt[Z] = ctrl_u_(Z);
 }
+
+scrimmage_proto::SpaceParams SingleIntegrator::action_space_params() {
+    scrimmage_proto::SpaceParams space_params;
+    scrimmage_proto::SingleSpaceParams *single_space_params = space_params.add_params();
+    single_space_params->set_num_dims(3);
+
+    single_space_params->add_minimum(-std::numeric_limits<double>::infinity());
+    single_space_params->add_maximum(std::numeric_limits<double>::infinity());
+    single_space_params->set_discrete(false);
+    return space_params;
+}

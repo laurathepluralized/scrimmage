@@ -57,6 +57,7 @@ class Autonomy : public Plugin {
     std::string type();
     virtual bool step_autonomy(double t, double dt);
     virtual bool posthumous(double t);
+    virtual void init();
     virtual bool ready() { return true; }
     virtual void init(std::map<std::string, std::string> &params);
     bool need_reset();

@@ -43,11 +43,15 @@ namespace scrimmage {
 
 class Metrics : public Plugin{
  public:
+    Metrics();
+    virtual ~Metrics();
+
     virtual std::string name();
+    virtual void init();
     virtual void init(std::map<std::string, std::string> &params);
     virtual bool step_metrics(double t, double dt);
 
-    void set_team_lookup(std::shared_ptr<std::unordered_map<int, int>> &lookup);
+    void set_team_lookup(std::shared_ptr<std::unordered_map<int, int> > &lookup);
 
     virtual void calc_team_scores();
     virtual void print_team_summaries();
@@ -60,7 +64,7 @@ class Metrics : public Plugin{
 
     virtual std::list<std::string> &headers();
 
-    virtual std::map<int, double> &team_scores();
+    virtual std::map<int, double> & team_scores();
 
  protected:
     std::string weights_file_;

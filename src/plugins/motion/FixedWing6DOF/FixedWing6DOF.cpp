@@ -240,3 +240,15 @@ void FixedWing6DOF::teleport(sc::StatePtr &state) {
     // x_[YAW] = state->quat().yaw();
     // x_[SPEED] = state->vel()[0];
 }
+
+scrimmage_proto::SpaceParams FixedWing6DOF::action_space_params() {
+    scrimmage_proto::SpaceParams space_params;
+    scrimmage_proto::SingleSpaceParams *single_space_params = space_params.add_params();
+    single_space_params->set_num_dims(CONTROL_NUM_ITEMS);
+
+    single_space_params->add_minimum(-std::numeric_limits<double>::infinity());
+    single_space_params->add_maximum(std::numeric_limits<double>::infinity());
+
+    single_space_params->set_discrete(false);
+    return space_params;
+}

@@ -29,9 +29,12 @@
  * A Long description goes here.
  *
  */
-#ifndef EXT
+#ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROLCLIENT_H_
+#define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROLCLIENT_H_
 
 #include <grpc++/grpc++.h>
+#include <scrimmage/proto/ExternalControl.pb.h>
+#include <scrimmage/proto/ExternalControl.grpc.pb.h>
 
 #include <map>
 #include <string>
@@ -39,16 +42,16 @@
 class ExternalControlClient {
  public:
     explicit ExternalControlClient(std::shared_ptr<grpc::Channel> channel) :
-        stub_(ExternalControlClient::NewStub(channel)) {}
+        stub_(scrimmage_proto::ExternalControl::NewStub(channel)) {}
 
     bool send_environment(scrimmage_proto::Environment &env,
-                          scrimmage::State &state);
+                          scrimmage::StatePtr state);
 
     bool send_action_result(scrimmage_proto::ActionResult &action_result,
-                            scrimmage::State &state);
+                            scrimmage::StatePtr state);
  protected:
-    std::unique_ptr<ExternalControl::Stub> stub_;
+    std::unique_ptr<scrimmage_proto::ExternalControl::Stub> stub_;
 
 };
 
-#endif
+#endif // INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROLCLIENT_H_

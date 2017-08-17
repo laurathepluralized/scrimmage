@@ -37,6 +37,7 @@
 
 #include <scrimmage/fwd_decl.h>
 #include <scrimmage/plugin_manager/Plugin.h>
+#include <scrimmage/proto/ExternalControl.pb.h>
 
 #include <map>
 #include <vector>
@@ -78,5 +79,5 @@ class MotionModel : public Plugin {
 };
 
 using MotionModelPtr = std::shared_ptr<MotionModel>;
-}  // namespace scrimmage
-#endif  // INCLUDE_SCRIMMAGE_MOTION_MOTIONMODEL_H_
+} // namespace scrimmage
+#endif // INCLUDE_SCRIMMAGE_MOTION_MOTIONMODEL_H_

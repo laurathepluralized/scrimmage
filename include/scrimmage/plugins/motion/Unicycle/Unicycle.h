@@ -55,6 +55,8 @@ class Unicycle : public scrimmage::MotionModel {
         virtual Eigen::Vector2d &u() = 0;
     };
 
+    virtual scrimmage_proto::SpaceParams action_space_params();
+
  protected:
     Eigen::Vector2d ctrl_u_;
     double turn_rate_max_;

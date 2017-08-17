@@ -68,6 +68,8 @@ class JSBSimModel : public scrimmage::MotionModel{
         virtual Eigen::Vector3d &u() = 0;
     };
 
+    virtual scrimmage_proto::SpaceParams action_space_params();
+
  protected:
 #if ENABLE_JSBSIM == 1
     FGFDMExecPtr exec_;

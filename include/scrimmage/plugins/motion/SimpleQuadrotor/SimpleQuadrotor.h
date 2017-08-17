@@ -53,6 +53,8 @@ class SimpleQuadrotor : public scrimmage::MotionModel{
         virtual Eigen::Vector4d &u() = 0;
     };
 
+    virtual scrimmage_proto::SpaceParams action_space_params();
+
  protected:
     double max_vel_;
     double max_pitch_;

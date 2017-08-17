@@ -104,3 +104,15 @@ void DoubleIntegrator::model(const vector_t &x , vector_t &dxdt , double t) {
     dxdt[VY] = update_dvdt(x[VY], ctrl_u_(1));
     dxdt[VZ] = update_dvdt(x[VZ], ctrl_u_(2));
 }
+
+scrimmage_proto::SpaceParams DoubleIntegrator::action_space_params() {
+    scrimmage_proto::SpaceParams space_params;
+    scrimmage_proto::SingleSpaceParams *single_space_params = space_params.add_params();
+    single_space_params->set_num_dims(3);
+
+    single_space_params->add_minimum(-max_acc_);
+    single_space_params->add_maximum(max_acc_);
+
+    single_space_params->set_discrete(false);
+    return space_params;
+}

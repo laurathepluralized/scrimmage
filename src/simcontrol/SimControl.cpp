@@ -325,43 +325,42 @@ bool SimControl::init() {
 
 bool SimControl::generate_entities(double t) {
     // Initialize each entity
-    for (auto &kv : mp_->entity_descriptions()) {
-
-        int xml_des_id = kv.first;
-        std::map<std::string, std::string> &params = kv.second;
+    for (EntityDesc_t::iterator it = mp_->entity_descriptions().begin();
+         it != mp_->entity_descriptions().end(); ++it) {
 
         // Determine if we have to generate entities for this entity
         // description
-        if (mp_->gen_info().count(xml_des_id) == 0) {
+        if (mp_->gen_info().count(it->first) == 0) {
             continue;
         }
 
         // Generate entities if time has been reached
         int gen_count = 0;
-        for (double &gen_time : mp_->next_gen_times()[xml_des_id]) {
-            if (t >= gen_time && mp_->gen_info()[xml_des_id].total_count > 0) {
-                double x_var = scrimmage::get("variance_x", params, 100.0);
-                double y_var = scrimmage::get("variance_y", params, 100.0);
-                double z_var = scrimmage::get("variance_z", params, 0.0);
+        for (std::vector<double>::iterator time_it = mp_->next_gen_times()[it->first].begin();
+             time_it != mp_->next_gen_times()[it->first].end(); ++time_it) {
+            if (t >= *time_it && mp_->gen_info()[it->first].total_count > 0) {
+                double x_var = scrimmage::get("variance_x", it->second, 100.0);
+                double y_var = scrimmage::get("variance_y", it->second, 100.0);
+                double z_var = scrimmage::get("variance_z", it->second, 0.0);
 
 #if ENABLE_JSBSIM == 1
-                params["JSBSIM_ROOT"] = jsbsim_root_;
+                it->second["JSBSIM_ROOT"] = jsbsim_root_;
 #endif
 
-                params["dt"] = std::to_string(dt_);
+                it->second["dt"] = std::to_string(dt_);
                 double motion_multiplier = mp_->motion_multiplier();
-                params["motion_multiplier"] = std::to_string(motion_multiplier);
+                it->second["motion_multiplier"] = std::to_string(motion_multiplier);
 
-                double x0 = scrimmage::get("x0", params, 0);
-                double y0 = scrimmage::get("y0", params, 0);
-                double z0 = scrimmage::get("z0", params, 0);
+                double x0 = scrimmage::get("x0", it->second, 0);
+                double y0 = scrimmage::get("y0", it->second, 0);
+                double z0 = scrimmage::get("z0", it->second, 0);
 
                 Eigen::Vector3d pos(x0, y0, z0);
 
                 // Use variance if not the first entity in this group, or if a
                 // collision exists (This happens when you place <entity> tags"
                 // at the same location).
-                if (!mp_->gen_info()[xml_des_id].first_in_group ||
+                if (!mp_->gen_info()[it->first].first_in_group ||
                     collision_exists(pos)) {
                     // Use the uniform distribution to place aircraft
                     // within the x/y variance
@@ -389,27 +388,27 @@ bool SimControl::generate_entities(double t) {
                         collision_count++;
                     } while (exists);
 
-                    params["x"] = std::to_string(pos(0));
-                    params["y"] = std::to_string(pos(1));
-                    params["z"] = std::to_string(pos(2));
+                    it->second["x"] = std::to_string(pos(0));
+                    it->second["y"] = std::to_string(pos(1));
+                    it->second["z"] = std::to_string(pos(2));
                 } else {
-                    mp_->gen_info()[xml_des_id].first_in_group = false;
+                    mp_->gen_info()[it->first].first_in_group = false;
                 }
 
                 // Fill in the ent's lat/lon/alt value
                 double lat, lon, alt;
                 proj_->Reverse(pos(0), pos(1), pos(2), lat, lon, alt);
-                params["latitude"] = std::to_string(lat);
-                params["longitude"] = std::to_string(lon);
-                params["altitude"] = std::to_string(alt);
+                it->second["latitude"] = std::to_string(lat);
+                it->second["longitude"] = std::to_string(lon);
+                it->second["altitude"] = std::to_string(alt);
 
                 std::shared_ptr<Entity> ent = std::make_shared<Entity>();
                 ent->set_random(random_);
 
                 contacts_mutex_.lock();
-                AttributeMap &attr_map = mp_->entity_attributes()[xml_des_id];
-                bool ent_status = ent->init(attr_map, params,
-                    contacts_, mp_, proj_, next_id_, xml_des_id,
+                AttributeMap &attr_map = mp_->entity_attributes()[it->first];
+                bool ent_status = ent->init(attr_map, it->second,
+                    contacts_, mp_, proj_, next_id_, it->first,
                     plugin_manager_, network_, file_search_, rtree_);
                 contacts_mutex_.unlock();
 
@@ -444,20 +443,20 @@ bool SimControl::generate_entities(double t) {
                 pubsub_->pubs()["EntityGenerated"]->publish(msg, t);
 
                 next_id_++;
-                mp_->gen_info()[xml_des_id].total_count--;
+                mp_->gen_info()[it->first].total_count--;
 
                 // Is rate generation enabled?
-                if (mp_->gen_info()[xml_des_id].rate > 0) {
-                    gen_time = t + (1.0 / mp_->gen_info()[xml_des_id].rate) + random_->rng_normal()*mp_->gen_info()[xml_des_id].time_variance;
-                    if (gen_time <= t) {
+                if (mp_->gen_info()[it->first].rate > 0) {
+                    *time_it = t + (1.0 / mp_->gen_info()[it->first].rate) + random_->rng_normal()*mp_->gen_info()[it->first].time_variance;
+                    if (*time_it <= t) {
                         cout << "Next generation time less than current time. "
                              << "generate_time_variance is too large." << endl;
-                        gen_time = t + (1.0 / mp_->gen_info()[xml_des_id].rate);
+                        *time_it = t + (1.0 / mp_->gen_info()[it->first].rate);
                     }
                 }
                 gen_count++;
 
-                if (gen_count >= mp_->gen_info()[xml_des_id].gen_count) {
+                if (gen_count >= mp_->gen_info()[it->first].gen_count) {
                     break;
                 }
             }

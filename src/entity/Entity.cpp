@@ -55,7 +55,6 @@ using std::cout;
 using std::endl;
 namespace fs = boost::filesystem;
 namespace sp = scrimmage_proto;
-namespace pl = std::placeholders;
 
 namespace scrimmage {
 
@@ -120,30 +119,24 @@ bool Entity::init(AttributeMap &overrides,
     // motion model
     ////////////////////////////////////////////////////////////
     if (info.count("motion_model") == 0) {
-        motion_model_ = std::make_shared<MotionModel>();
-        motion_model_->set_state(state_);
-        motion_model_->set_parent(parent);
-        motion_model_->set_network(network);
-    } else {
-        motion_model_ =
-            std::dynamic_pointer_cast<MotionModel>(
-                plugin_manager->make_plugin("scrimmage::MotionModel",
-                    info["motion_model"], file_search, config_parse,
-                    overrides["motion_model"]));
-
-        if (motion_model_ == nullptr) {
-            cout << "Failed to open motion model plugin: " << info["motion_model"] << endl;
-            return false;
-        }
-
-        motion_model_->set_state(state_);
-        motion_model_->set_parent(parent);
-        motion_model_->set_network(network);
-        motion_model_->init(info, config_parse.params());
+        info["motion_model"] = "SimpleAircraft";
     }
 
-    services_["action_space"] =
-        std::bind(&MotionModel::action_space, motion_model_, pl::_1, pl::_2);
+    motion_model_ =
+        std::dynamic_pointer_cast<MotionModel>(
+            plugin_manager->make_plugin("scrimmage::MotionModel",
+                info["motion_model"], file_search, config_parse,
+                overrides["motion_model"]));
+
+    if (motion_model_ == nullptr) {
+        cout << "Failed to open motion model plugin: " << info["motion_model"] << endl;
+        return false;
+    }
+
+    motion_model_->set_state(state_);
+    motion_model_->set_parent(parent);
+    motion_model_->set_network(network);
+    motion_model_->init(info, config_parse.params());
 
     ////////////////////////////////////////////////////////////
     // sensor
@@ -299,7 +292,7 @@ bool Entity::parse_visual(std::map<std::string, std::string> &info,
 
     if (mesh_found) {
         type_ = Contact::Type::MESH;
-        visual_->set_visual_mode(texture_found ?  sp::ContactVisual::TEXTURE : sp::ContactVisual::COLOR);
+        visual_->set_visual_mode(texture_found ? scrimmage_proto::ContactVisual::TEXTURE : scrimmage_proto::ContactVisual::COLOR);
     } else if (visual_model == std::string("QUADROTOR")) {
         type_ = Contact::Type::QUADROTOR;
         visual_->set_visual_mode(scrimmage_proto::ContactVisual::COLOR);
@@ -454,4 +447,4 @@ bool Entity::call_service(scrimmage::MessageBasePtr req,
     }
 }
 
-}  // namespace scrimmage
+} // namespace scrimmage

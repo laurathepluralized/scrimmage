@@ -35,12 +35,11 @@
 #include <scrimmage/plugin_manager/Plugin.h>
 #include <scrimmage/fwd_decl.h>
 #include <scrimmage/pubsub/Message.h>
+#include <scrimmage/proto/ExternalControl.pb.h>
 
 #include <map>
 #include <memory>
 #include <string>
-#include <tuple>
-#include <vector>
 
 #include <boost/optional.hpp>
 
@@ -53,6 +52,10 @@ class Sensor : public Plugin {
     virtual std::string name() { return std::string("Sensor"); }
     virtual std::string type() { return std::string("Sensor"); }
 
+    virtual boost::optional<scrimmage_proto::SpaceParams> observation_space_params() {
+        return boost::none;
+    }
+
     virtual boost::optional<scrimmage::MessageBasePtr> sensor_msg(double t) = 0;
 
     template <class T = MessageBase,
@@ -60,8 +63,6 @@ class Sensor : public Plugin {
     boost::optional<MessageBasePtr> sense(double t) {
         return sensor_msg(t);
     }
-
-    virtual scrimmage_proto::SpaceParams observation_space_params() = 0;
 
     template <class T = MessageBase,
               class = typename std::enable_if<!std::is_same<T, MessageBase>::value, void>::type>

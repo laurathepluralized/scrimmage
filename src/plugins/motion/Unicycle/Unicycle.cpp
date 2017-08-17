@@ -93,3 +93,18 @@ void Unicycle::model(const vector_t &x , vector_t &dxdt , double t) {
     dxdt[Y] = vel * sin(x[THETA]);
     dxdt[THETA] = yaw_rate;
 }
+
+scrimmage_proto::SpaceParams Unicycle::action_space_params() {
+    scrimmage_proto::SpaceParams space_params;
+    scrimmage_proto::SingleSpaceParams *single_space_params = space_params.add_params();
+    single_space_params->set_num_dims(2);
+
+    single_space_params->add_minimum(-vel_max_);
+    single_space_params->add_maximum(vel_max_);
+
+    single_space_params->add_minimum(-turn_rate_max_);
+    single_space_params->add_maximum(turn_rate_max_);
+
+    single_space_params->set_discrete(false);
+    return space_params;
+}

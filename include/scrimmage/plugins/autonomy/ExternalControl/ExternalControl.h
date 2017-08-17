@@ -33,7 +33,7 @@
 #ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_
 #define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_
 #include <scrimmage/autonomy/Autonomy.h>
-#include <scrimmage/plugins/autonomy/ExternalControlClient.h>
+#include <scrimmage/plugins/autonomy/ExternalControl/ExternalControlClient.h>
 
 #include <Eigen/Dense>
 
@@ -46,7 +46,10 @@ class ExternalControl : public scrimmage::Autonomy {
      virtual bool step_autonomy(double t, double dt);
 
  protected:
-    scrimmage_proto::Environment get_env();
+    void init_client(std::string server_address);
+    bool send_action_result(double t, double reward, bool done);
+    scrimmage_proto::Environment send_env(double min_reward, double max_reward);
+
     ExternalControlClient external_control_client_;
 
 };

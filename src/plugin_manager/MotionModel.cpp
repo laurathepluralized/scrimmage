@@ -67,4 +67,4 @@ void MotionModel::set_external_force(Eigen::Vector3d force) {
     ext_force_ = force;
 }
 
-}  // namespace scrimmage
+} // namespace scrimmage
