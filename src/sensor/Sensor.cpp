@@ -29,45 +29,29 @@
  * A Long description goes here.
  *
  */
-syntax = "proto3";
 
-option java_multiple_files = true;
-option java_package = "com.syllo.scrimmage";
+#include <scrimmage/sensor/Sensor.h>
 
-import "scrimmage/proto/State.proto";
-import "google/protobuf/empty.proto";
+#include <boost/optional.hpp>
 
-package scrimmage_proto;
+namespace scrimmage {
 
-service ExternalControl {
-  rpc SendEnvironment (Environment) returns (google.protobuf.Empty) {}
-  rpc SendActionResult (ActionResult) returns (State) {}
+void Sensor::init(std::map<std::string, std::string> &params) {return;}
+
+std::string Sensor::name() {return std::string("Sensor");}
+std::string Sensor::type() {return std::string("Sensor");}
+
+boost::optional<scrimmage_proto::SpaceParams> Sensor::observation_space_params() {
+    return boost::none;
 }
 
-message SingleSpaceParams {
-    int32 num_dims = 1;
-    repeated double minimum = 2;
-    repeated double maximum = 3;
-    bool discrete = 4;
+boost::optional<scrimmage::MessageBasePtr> Sensor::sensor_msg(double t) {
+    return boost::none;
 }
 
-message SpaceParams {
-    repeated SingleSpaceParams params = 1;
+boost::optional<scrimmage::MessagePtr<scrimmage_proto::SpaceSample>>
+Sensor::sensor_msg_flat(double t) {
+    return boost::none;
 }
 
-message Environment {
-    SpaceParams action_spaces = 1;
-    SpaceParams observation_spaces = 2;
-    double min_reward = 3;
-    double max_reward = 4;
-}
-
-message SpaceSample {
-    repeated double value = 1;
-}
-
-message ActionResult {
-    SpaceSample observations = 1;
-    double reward = 2;
-    bool done = 3;
-}
+} // namespace scrimmage

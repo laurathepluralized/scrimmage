@@ -48,10 +48,10 @@ class ExternalControl : public scrimmage::Autonomy {
  protected:
     void init_client(std::string server_address);
     bool send_action_result(double t, double reward, bool done);
-    scrimmage_proto::Environment send_env(double min_reward, double max_reward);
+    bool send_env(double min_reward, double max_reward);
 
     ExternalControlClient external_control_client_;
-
+    bool env_sent_ = false;
 };
 
 #endif // INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_

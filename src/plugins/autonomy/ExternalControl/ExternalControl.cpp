@@ -31,6 +31,7 @@
  */
 
 #include <scrimmage/plugins/autonomy/ExternalControl/ExternalControl.h>
+#include <scrimmage/plugin_manager/RegisterPlugin.h>
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/sensor/Sensor.h>
 #include <scrimmage/pubsub/Message.h>
@@ -40,14 +41,19 @@
 
 namespace sp = scrimmage_proto;
 
+REGISTER_PLUGIN(scrimmage::Autonomy, ExternalControl, ExternalControl_plugin)
+
 void ExternalControl::init(std::map<std::string, std::string> &params) {
     init_client(params.at("server_address"));
-
-    double inf = std::numeric_limits<double>::infinity();
-    send_env(-inf, inf);
 }
 
 bool ExternalControl::step_autonomy(double t, double dt) {
+    if (!env_sent_) {
+        env_sent_ = true;
+        const double inf = std::numeric_limits<double>::infinity();
+        send_env(-inf, inf);
+    }
+
     return send_action_result(t, 0, false);
 }
 
@@ -56,13 +62,12 @@ void ExternalControl::init_client(std::string server_address) {
             grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials()));
 }
 
-
 bool ExternalControl::send_action_result(double t, double reward, bool done) {
     sp::ActionResult action_result;
     sp::SpaceSample *obs = action_result.mutable_observations();
 
     for (auto &kv : parent_->sensors()) {
-        auto msg = kv.second->sense<sp::SpaceSample>(t);
+        auto msg = kv.second->sensor_msg_flat(t);
         if (msg) {
             sp::SpaceSample &sample = (*msg)->data;
             for (int i = 0; i < sample.value_size(); i++) {
@@ -77,7 +82,7 @@ bool ExternalControl::send_action_result(double t, double reward, bool done) {
     return external_control_client_.send_action_result(action_result, desired_state_);
 }
 
-scrimmage_proto::Environment ExternalControl::send_env(double min_reward, double max_reward) {
+bool ExternalControl::send_env(double min_reward, double max_reward) {
     sp::Environment env;
 
     *env.mutable_action_spaces() = parent_->motion()->action_space_params();
@@ -95,7 +100,6 @@ scrimmage_proto::Environment ExternalControl::send_env(double min_reward, double
 
     env.set_min_reward(min_reward);
     env.set_max_reward(max_reward);
-    external_control_client_.send_environment(env, desired_state_);
 
-    return env;
+    return external_control_client_.send_environment(env, desired_state_);
 }

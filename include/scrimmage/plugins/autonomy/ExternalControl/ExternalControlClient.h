@@ -33,6 +33,8 @@
 #define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROLCLIENT_H_
 
 #include <grpc++/grpc++.h>
+
+#include <scrimmage/fwd_decl.h>
 #include <scrimmage/proto/ExternalControl.pb.h>
 #include <scrimmage/proto/ExternalControl.grpc.pb.h>
 
@@ -41,6 +43,7 @@
 
 class ExternalControlClient {
  public:
+    ExternalControlClient() = default;
     explicit ExternalControlClient(std::shared_ptr<grpc::Channel> channel) :
         stub_(scrimmage_proto::ExternalControl::NewStub(channel)) {}
 
