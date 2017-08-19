@@ -41,6 +41,8 @@
 #include <map>
 #include <string>
 
+#include <boost/optional.hpp>
+
 class ExternalControlClient {
  public:
     ExternalControlClient() = default;
@@ -50,8 +52,9 @@ class ExternalControlClient {
     bool send_environment(scrimmage_proto::Environment &env,
                           scrimmage::StatePtr state);
 
-    bool send_action_result(scrimmage_proto::ActionResult &action_result,
-                            scrimmage::StatePtr state);
+    boost::optional<scrimmage_proto::Action>
+    send_action_result(scrimmage_proto::ActionResult &action_result);
+
  protected:
     std::unique_ptr<scrimmage_proto::ExternalControl::Stub> stub_;
 

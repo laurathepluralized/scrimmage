@@ -34,14 +34,13 @@ syntax = "proto3";
 option java_multiple_files = true;
 option java_package = "com.syllo.scrimmage";
 
-import "scrimmage/proto/State.proto";
 import "google/protobuf/empty.proto";
 
 package scrimmage_proto;
 
 service ExternalControl {
   rpc SendEnvironment (Environment) returns (google.protobuf.Empty) {}
-  rpc SendActionResult (ActionResult) returns (State) {}
+  rpc SendActionResult (ActionResult) returns (Action) {}
 }
 
 message SingleSpaceParams {
@@ -69,5 +68,11 @@ message SpaceSample {
 message ActionResult {
     SpaceSample observations = 1;
     double reward = 2;
+    bool done = 3;
+}
+
+message Action {
+    repeated int32 discrete = 1;
+    repeated double continuous = 2;
     bool done = 3;
 }

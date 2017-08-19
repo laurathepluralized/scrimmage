@@ -36,6 +36,7 @@
 #include <scrimmage/sensor/Sensor.h>
 #include <scrimmage/pubsub/Message.h>
 #include <scrimmage/motion/MotionModel.h>
+#include <scrimmage/math/State.h>
 
 #include <limits>
 
@@ -43,27 +44,45 @@ namespace sp = scrimmage_proto;
 
 REGISTER_PLUGIN(scrimmage::Autonomy, ExternalControl, ExternalControl_plugin)
 
-void ExternalControl::init(std::map<std::string, std::string> &params) {
-    init_client(params.at("server_address"));
-}
-
 bool ExternalControl::step_autonomy(double t, double dt) {
-    std::cout << "t = " << t << std::endl;
     if (!env_sent_) {
+        external_control_client_ =
+            ExternalControlClient(grpc::CreateChannel(
+                server_address_, grpc::InsecureChannelCredentials()));
         env_sent_ = true;
-        const double inf = std::numeric_limits<double>::infinity();
-        send_env(-inf, inf);
+        send_env();
     }
 
-    return send_action_result(t, 0, false);
+    auto action = send_action_result(t, 0, false);
+    if (!action) {
+        std::cout << "error receiving external action" << std::endl;
+        return false;
+    }
+
+    return handle_action(t, dt, *action);
 }
 
-void ExternalControl::init_client(std::string server_address) {
-    external_control_client_ = ExternalControlClient(
-            grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials()));
+bool ExternalControl::handle_action(
+        double t, double dt, scrimmage_proto::Action action) {
+    if (action.continuous_size() != 9) {
+        std::cout << "recieved external action "
+            << " of length " << action.continuous_size()
+            << "  (need length 9 to match state)" << std::endl;
+        return false;
+    }
+
+    const auto c = action.continuous();
+    desired_state_->pos() <<
+        action.continuous(0), action.continuous(1), action.continuous(2);
+    desired_state_->vel() <<
+        action.continuous(3), action.continuous(4), action.continuous(5);
+    desired_state_->quat().set(
+        action.continuous(6), action.continuous(7), action.continuous(8));
+    return true;
 }
 
-bool ExternalControl::send_action_result(double t, double reward, bool done) {
+boost::optional<scrimmage_proto::Action>
+ExternalControl::send_action_result(double t, double reward, bool done) {
     sp::ActionResult action_result;
     sp::SpaceSample *obs = action_result.mutable_observations();
 
@@ -80,13 +99,13 @@ bool ExternalControl::send_action_result(double t, double reward, bool done) {
     action_result.set_reward(reward);
     action_result.set_done(done);
 
-    return external_control_client_.send_action_result(action_result, desired_state_);
+    return external_control_client_.send_action_result(action_result);
 }
 
-bool ExternalControl::send_env(double min_reward, double max_reward) {
+bool ExternalControl::send_env() {
     sp::Environment env;
 
-    *env.mutable_action_spaces() = parent_->motion()->action_space_params();
+    *env.mutable_action_spaces() = action_space_params();
 
     sp::SpaceParams *obs_space = env.mutable_observation_spaces();
 
@@ -99,13 +118,13 @@ bool ExternalControl::send_env(double min_reward, double max_reward) {
         }
     }
 
-    env.set_min_reward(min_reward);
-    env.set_max_reward(max_reward);
+    env.set_min_reward(min_reward_);
+    env.set_max_reward(max_reward_);
 
     return external_control_client_.send_environment(env, desired_state_);
 }
 
-scrimmage_proto::SpaceParams action_space_params() {
+scrimmage_proto::SpaceParams ExternalControl::action_space_params() {
     scrimmage_proto::SpaceParams space_params;
     scrimmage_proto::SingleSpaceParams *single_space_params =
         space_params.add_params();
@@ -119,15 +138,15 @@ scrimmage_proto::SpaceParams action_space_params() {
 
     // roll
     single_space_params->add_minimum(-M_PI);
-    single_space_params->add_minimum(M_PI);
+    single_space_params->add_maximum(M_PI);
 
     // pitch
     single_space_params->add_minimum(-M_PI / 2);
-    single_space_params->add_minimum(M_PI / 2);
+    single_space_params->add_maximum(M_PI / 2);
 
     // yaw
     single_space_params->add_minimum(-M_PI / 2);
-    single_space_params->add_minimum(M_PI / 2);
+    single_space_params->add_maximum(M_PI / 2);
 
     return space_params;
 }

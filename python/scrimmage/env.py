@@ -6,7 +6,6 @@ import time
 import os
 import signal
 import sys
-from pprint import pprint
 
 import numpy as np
 import queue
@@ -15,9 +14,10 @@ from concurrent import futures
 import gym
 import gym.spaces
 import google.protobuf.empty_pb2
-import lvdb
 
-from .proto import ExternalControl_pb2_grpc
+from .proto import ExternalControl_pb2, ExternalControl_pb2_grpc
+
+import lvdb
 
 
 class ServerThread(threading.Thread):
@@ -29,6 +29,7 @@ class ServerThread(threading.Thread):
         self.queues = queues
         self.address = address
         self.max_workers = max_workers
+        self.stop = False
 
     def run(self):
         """Start SCRIMMAGE ExternalControl GRPC Service."""
@@ -41,8 +42,10 @@ class ServerThread(threading.Thread):
         server.start()
 
         try:
-            while True:
+            while not self.stop:
                 time.sleep(1)
+            server.stop(0)
+            self.queues['stop'].put(True)
         except KeyboardInterrupt:
             server.stop(0)
 
@@ -52,66 +55,96 @@ class ScrimmageEnv(gym.Env):
 
     def __init__(self):
         """Create queues for multi-threading."""
-        self.queues = \
-            {s: queue.Queue() for s in ['env', 'action', 'action_response']}
+        self.queues = {s: queue.Queue()
+                       for s in ['env', 'action', 'action_response', 'stop']}
+        self.server_thread = ServerThread(self.queues)
+        self.server_thread.start()
 
         files = [os.path.join(p, '..', 'missions', 'external_control.xml')
                  for p in os.environ['SCRIMMAGE_DATA_PATH'].split(':') if p]
         self.mission_file = next((f for f in files if os.path.isfile(f)))
-
-        ServerThread(self.queues).start()
 
         self.scrimmage_process = \
             subprocess.Popen(["scrimmage", self.mission_file])
 
         environment = self.queues['env'].get()
 
-        self.action_space = \
-            _create_tuple_space(environment.action_spaces)
-        self.observation_space = \
-            _create_tuple_space(environment.observation_spaces)
+        try:
+            self.action_space = \
+                _create_tuple_space(environment.action_spaces)
+            self.observation_space = \
+                _create_tuple_space(environment.observation_spaces)
+        except AssertionError:
+            print('calling terminate from __init__ due to env problem')
+            self.terminate_scrimmage()
+            self.server_thread.stop = True
+            raise
+
         self.reward_range = (environment.min_reward, environment.max_reward)
 
         signal.signal(signal.SIGINT, self._signal_handler)
 
     def _signal_handler(self, signum, frame):
         """Exit cleanly <ctrl-c> (i.e., kill the subprocesses)."""
-        print("exiting scrimmage...")
-        self.scrimmage_process.kill()
+        print("exiting scrimmage from sigint...")
+        self.shutdown()
         sys.exit(0)
 
     def _reset(self):
         """Restart scrimmage and return result."""
-        self.scrimmage_process.kill()
+        self._terminate_scrimmage()
+
+        _clear_queue(self.queues['action'])
+        _clear_queue(self.queues['action_response'])
+        _clear_queue(self.queues['env'])
+
         self.scrimmage_process = \
             subprocess.Popen(["scrimmage", self.mission_file])
         return self._return_action_result()
 
     def _step(self, action):
         """Send action to SCRIMMAGE and return result."""
-        self.queues['action_response'].put(action)
+        action_pb = ExternalControl_pb2.Action(
+            discrete=action[0], continuous=action[1], done=False)
+        self.queues['action'].put(action_pb)
         return self._return_action_result()
 
     def _return_action_result(self):
         res = self.queues['action_response'].get()
         size_discrete = self.observation_space.spaces[0].num_discrete_space
-        print("1", res)
         discrete_obs = np.array(res.observations.value[:size_discrete])
-        print("2", discrete_obs)
         continuous_obs = np.array(res.observations.value[size_discrete:])
-        print("3", continuous_obs)
         obs = tuple((discrete_obs, continuous_obs))
-        print("4", obs)
         info = {}
-        print("5")
         return obs, res.reward, res.done, info
 
+    def _terminate_scrimmage(self):
+        """Terminates scrimmage instance held by the class.
+
+        given how sigints are handled by scrimmage, we need to
+        shutdown the network to the autonomy in addition to sending a
+        sigint.
+        """
+        self.queues['action'].put(ExternalControl_pb2.Action(done=False))
+        self.scrimmage_process.terminate()
+        self.scrimmage_process.wait()
+
+    def shutdown(self):
+        """Cleanup spawned threads and subprocesses.
+
+        The thread manages a GRPC server to communicate with scrimmage.  The
+        subprocess is the actual scrimmage instance.  This method needs to be
+        called in order to make sure a python instance exits cleanly.
+        """
+        self._terminate_scrimmage()
+        self.server_thread.stop = True
 
 class ExternalControl(ExternalControl_pb2_grpc.ExternalControlServicer):
     """GRPC Service to communicate with SCRIMMAGE Autonomy."""
 
     def __init__(self, queues):
         """Receive queues for multi-threading."""
+        print('starting ExternalControl')
         self.queues = queues
 
     def SendEnvironment(self, env, context):
@@ -133,6 +166,7 @@ def _create_tuple_space(space_params):
         if param.num_dims != 1 and len(param.maximum) == 1:
             dst_lst += param.num_dims * [param.minimum, param.maximum]
         else:
+            assert len(param.minimum) == len(param.maximum)
             dst_lst += zip(list(param.minimum), list(param.maximum))
 
     for param in space_params.params:
@@ -146,3 +180,11 @@ def _create_tuple_space(space_params):
     low, high = zip(*continuous_extrema)
     continuous_space = gym.spaces.Box(np.array(low), np.array(high))
     return gym.spaces.Tuple((discrete_space, continuous_space))
+
+def _clear_queue(q):
+    try:
+        while True:
+            q.get(False)
+    except queue.Empty:
+        pass
+

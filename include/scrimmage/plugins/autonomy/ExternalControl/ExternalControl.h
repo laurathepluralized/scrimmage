@@ -32,6 +32,7 @@
 
 #ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_
 #define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_EXTERNALCONTROL_EXTERNALCONTROL_H_
+
 #include <scrimmage/autonomy/Autonomy.h>
 #include <scrimmage/plugins/autonomy/ExternalControl/ExternalControlClient.h>
 
@@ -39,17 +40,28 @@
 
 #include <map>
 #include <string>
+#include <limits>
+
+#include <boost/optional.hpp>
 
 class ExternalControl : public scrimmage::Autonomy {
  public:
-    virtual void init(std::map<std::string, std::string> &params);
-    virtual bool step_autonomy(double t, double dt);
+    virtual void init(std::map<std::string, std::string> &params) {}
+    bool step_autonomy(double t, double dt) final;
+
+    virtual bool handle_action(
+        double t, double dt, scrimmage_proto::Action action);
     virtual scrimmage_proto::SpaceParams action_space_params();
 
  protected:
-    void init_client(std::string server_address);
-    bool send_action_result(double t, double reward, bool done);
-    bool send_env(double min_reward, double max_reward);
+    std::string server_address_ = "localhost:50051";
+    double min_reward_ = -std::numeric_limits<double>::infinity();
+    double max_reward_ = std::numeric_limits<double>::infinity();
+
+ private:
+    boost::optional<scrimmage_proto::Action>
+      send_action_result(double t, double reward, bool done);
+    bool send_env();
 
     ExternalControlClient external_control_client_;
     bool env_sent_ = false;
