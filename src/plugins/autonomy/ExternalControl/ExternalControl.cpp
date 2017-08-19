@@ -48,6 +48,7 @@ void ExternalControl::init(std::map<std::string, std::string> &params) {
 }
 
 bool ExternalControl::step_autonomy(double t, double dt) {
+    std::cout << "t = " << t << std::endl;
     if (!env_sent_) {
         env_sent_ = true;
         const double inf = std::numeric_limits<double>::infinity();
@@ -102,4 +103,31 @@ bool ExternalControl::send_env(double min_reward, double max_reward) {
     env.set_max_reward(max_reward);
 
     return external_control_client_.send_environment(env, desired_state_);
+}
+
+scrimmage_proto::SpaceParams action_space_params() {
+    scrimmage_proto::SpaceParams space_params;
+    scrimmage_proto::SingleSpaceParams *single_space_params =
+        space_params.add_params();
+    single_space_params->set_num_dims(9);
+
+    const double inf = std::numeric_limits<double>::infinity();
+    for (int i = 0; i < 6; i++) {
+        single_space_params->add_minimum(-inf);
+        single_space_params->add_maximum(inf);
+    }
+
+    // roll
+    single_space_params->add_minimum(-M_PI);
+    single_space_params->add_minimum(M_PI);
+
+    // pitch
+    single_space_params->add_minimum(-M_PI / 2);
+    single_space_params->add_minimum(M_PI / 2);
+
+    // yaw
+    single_space_params->add_minimum(-M_PI / 2);
+    single_space_params->add_minimum(M_PI / 2);
+
+    return space_params;
 }

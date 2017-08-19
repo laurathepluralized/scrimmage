@@ -42,8 +42,9 @@
 
 class ExternalControl : public scrimmage::Autonomy {
  public:
-     virtual void init(std::map<std::string, std::string> &params);
-     virtual bool step_autonomy(double t, double dt);
+    virtual void init(std::map<std::string, std::string> &params);
+    virtual bool step_autonomy(double t, double dt);
+    virtual scrimmage_proto::SpaceParams action_space_params();
 
  protected:
     void init_client(std::string server_address);

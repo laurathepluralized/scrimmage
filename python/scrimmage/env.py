@@ -1,8 +1,12 @@
 """Provide OpenAI interface for SCRIMMAGE."""
+from __future__ import print_function
 import threading
 import subprocess
 import time
 import os
+import signal
+import sys
+from pprint import pprint
 
 import numpy as np
 import queue
@@ -62,16 +66,22 @@ class ScrimmageEnv(gym.Env):
 
         environment = self.queues['env'].get()
 
-        lvdb.set_trace()
         self.action_space = \
             _create_tuple_space(environment.action_spaces)
         self.observation_space = \
             _create_tuple_space(environment.observation_spaces)
         self.reward_range = (environment.min_reward, environment.max_reward)
 
+        signal.signal(signal.SIGINT, self._signal_handler)
+
+    def _signal_handler(self, signum, frame):
+        """Exit cleanly <ctrl-c> (i.e., kill the subprocesses)."""
+        print("exiting scrimmage...")
+        self.scrimmage_process.kill()
+        sys.exit(0)
+
     def _reset(self):
         """Restart scrimmage and return result."""
-        lvdb.set_trace()
         self.scrimmage_process.kill()
         self.scrimmage_process = \
             subprocess.Popen(["scrimmage", self.mission_file])
@@ -79,16 +89,21 @@ class ScrimmageEnv(gym.Env):
 
     def _step(self, action):
         """Send action to SCRIMMAGE and return result."""
-        self.queues['action_action'].put(action)
+        self.queues['action_response'].put(action)
         return self._return_action_result()
 
     def _return_action_result(self):
         res = self.queues['action_response'].get()
         size_discrete = self.observation_space.spaces[0].num_discrete_space
+        print("1", res)
         discrete_obs = np.array(res.observations.value[:size_discrete])
+        print("2", discrete_obs)
         continuous_obs = np.array(res.observations.value[size_discrete:])
+        print("3", continuous_obs)
         obs = tuple((discrete_obs, continuous_obs))
+        print("4", obs)
         info = {}
+        print("5")
         return obs, res.reward, res.done, info
 
 
