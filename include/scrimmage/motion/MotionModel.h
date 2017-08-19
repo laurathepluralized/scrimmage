@@ -37,7 +37,6 @@
 
 #include <scrimmage/fwd_decl.h>
 #include <scrimmage/plugin_manager/Plugin.h>
-#include <scrimmage/proto/ExternalControl.pb.h>
 
 #include <map>
 #include <vector>
@@ -63,8 +62,6 @@ class MotionModel : public Plugin {
     virtual void set_external_force(Eigen::Vector3d force);
     virtual void set_mass(double mass) { mass_ = mass; }
     virtual double mass() { return mass_; }
-
-    virtual scrimmage_proto::SpaceParams action_space_params() = 0;
 
  protected:
     void ode_step(double dt);

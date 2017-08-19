@@ -119,24 +119,28 @@ bool Entity::init(AttributeMap &overrides,
     // motion model
     ////////////////////////////////////////////////////////////
     if (info.count("motion_model") == 0) {
-        info["motion_model"] = "SimpleAircraft";
+        motion_model_ = std::make_shared<MotionModel>();
+        motion_model_->set_state(state_);
+        motion_model_->set_parent(parent);
+        motion_model_->set_network(network);
+        // cout << "Warning: Missing motion model tag, initializing with base class" << endl;
+    } else {
+        motion_model_ =
+            std::dynamic_pointer_cast<MotionModel>(
+                plugin_manager->make_plugin("scrimmage::MotionModel",
+                    info["motion_model"], file_search, config_parse,
+                    overrides["motion_model"]));
+
+        if (motion_model_ == nullptr) {
+            cout << "Failed to open motion model plugin: " << info["motion_model"] << endl;
+            return false;
+        }
+
+        motion_model_->set_state(state_);
+        motion_model_->set_parent(parent);
+        motion_model_->set_network(network);
+        motion_model_->init(info, config_parse.params());
     }
-
-    motion_model_ =
-        std::dynamic_pointer_cast<MotionModel>(
-            plugin_manager->make_plugin("scrimmage::MotionModel",
-                info["motion_model"], file_search, config_parse,
-                overrides["motion_model"]));
-
-    if (motion_model_ == nullptr) {
-        cout << "Failed to open motion model plugin: " << info["motion_model"] << endl;
-        return false;
-    }
-
-    motion_model_->set_state(state_);
-    motion_model_->set_parent(parent);
-    motion_model_->set_network(network);
-    motion_model_->init(info, config_parse.params());
 
     ////////////////////////////////////////////////////////////
     // sensor

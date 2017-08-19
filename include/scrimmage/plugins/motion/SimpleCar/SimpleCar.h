@@ -53,8 +53,6 @@ class SimpleCar : public scrimmage::MotionModel{
         virtual Eigen::Vector2d &u() = 0;
     };
 
-    virtual scrimmage_proto::SpaceParams action_space_params();
-
  protected:
     double length_;
     bool enable_gravity_;

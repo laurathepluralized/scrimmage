@@ -60,8 +60,6 @@ class FixedWing6DOF : public scrimmage::MotionModel{
 
     void set_u(std::shared_ptr<Eigen::Vector4d> u) {ctrl_u_ = u;}
 
-    virtual scrimmage_proto::SpaceParams action_space_params();
-
  protected:
     scrimmage::PID heading_pid_;
     scrimmage::PID alt_pid_;
