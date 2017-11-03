@@ -5,6 +5,7 @@ try:
 except ImportError:
     import io
 import os
+import argparse
 from settings_parser import *
 import subprocess
 import numpy as np
@@ -116,16 +117,24 @@ def optimize(templateFilename, ranges, stateSpaceSampler,
 
             xx.append(params)
 
+            num_current = 0
             # Run the same params multiple times (in order to get a better average result)
             scrimmageProcesses = []
             for paramScrimmageIter in range(numIterationsPerSample):
                 # run scrimmage
                 logging.info('Executing Mission File')
-                scrimmageProcesses.append(subprocess.Popen(["scrimmage", missionFile]))
+                #  scrimmageProcesses.append(subprocess.Popen(["scrimmage", missionFile]))
+                scrimmageProcesses.append(subprocess.check_call(["scrimmage", missionFile]))
+                #  num_current += 1
+                #  if num_current >= theargs.par:
+                    #  # Wait for all currently-running processes to finish
+                    #  for process in scrimmageProcesses:
+                        #  process.wait()
+                        #  num_current -= 1
 
             # Wait for all processes to finish
-            for process in scrimmageProcesses:
-                process.wait()
+            #  for process in scrimmageProcesses:
+                #  process.wait()
 
             os.remove(missionFile)
             logging.info('Completed Scrimmage Simulations')
@@ -135,7 +144,9 @@ def optimize(templateFilename, ranges, stateSpaceSampler,
         # analysis for all mission results
         logging.info('Parsing Results')
         for iter in range(newBatchStartingIter,simulationIter):
+            print('Logpath: ', logPath)
             yy.append(postScrimmageAnalysis(logPath+'iter-'+str(iter)))
+            print('-------------------------------------------------', str(iter))
 
             # Append the new params and output
             saveSamples(samplesFile, xx[iter], yy[iter], ranges.keys())
@@ -151,9 +162,27 @@ def optimize(templateFilename, ranges, stateSpaceSampler,
     logging.info('Optimization complete.')
     return knownArgmax, expectedValue
 
+
+def handle_arguments():
+
+    theparser = argparse.ArgumentParser(description='Parameter optimization and batch runner for the SCRIMMAGE simulator.')
+
+    add = theparser.add_argument
+    add('-s', '--settings', default='settings.json', \
+            help='Path to JSON file of parameters (defaults to settings.json in working directory)')
+    add('-p', '--par', type=int, default=4, help='How many simulations to run at a time')
+
+    args = theparser.parse_args()
+    return args
+
+
 if __name__ == "__main__":
+
+    theargs = handle_arguments()
+
     # Parse the configuration from the settings file
-    parser = SettingsParser('settings.json')
+    #  parser = SettingsParser('settings.json')
+    parser = SettingsParser(theargs.settings)
     missionFile = parser.getMissionFile()
     logPath = parser.getLogPath()
     sampler = parser.getStateSpaceSampler()
