@@ -100,10 +100,25 @@ void SimpleCollisionMetrics::init(std::map<std::string, std::string> &params) {
 }
 
 bool SimpleCollisionMetrics::step_metrics(double t, double dt) {
+    if (!initialized_) {
+        for (auto & teamnum : *id_to_team_map_) {
+            // get all the teams so we can initialize their scores
+            teams_.emplace(teamnum.second);
+        }
+        initialized_ = true;
+    }
     return true;
 }
 
 void SimpleCollisionMetrics::calc_team_scores() {
+    // Create the score, if necessary
+    for (auto &team_id : teams_) {
+        if (team_coll_scores_.count(team_id) == 0) {
+            SimpleCollisionScore score;
+            score.set_weights(params_);
+            team_coll_scores_[team_id] = score;
+        }
+    }
     double end_time = -std::numeric_limits<double>::infinity();
     double beg_time = std::numeric_limits<double>::infinity();
     for (auto &kv : scores_) {
@@ -140,13 +155,6 @@ void SimpleCollisionMetrics::calc_team_scores() {
 
         int team_id = (*id_to_team_map_)[kv.first];
 
-        // Create the score, if necessary
-        if (team_coll_scores_.count(team_id) == 0) {
-            SimpleCollisionScore score;
-            score.set_weights(params_);
-            score.set_max_flight_time(max_flight_time);
-            team_coll_scores_[team_id] = score;
-        }
         team_coll_scores_[team_id].add_non_team_collisions(score.non_team_collisions());
         team_coll_scores_[team_id].add_team_collisions(score.team_collisions());
         team_coll_scores_[team_id].add_ground_collisions(score.ground_collisions());
