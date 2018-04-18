@@ -111,14 +111,6 @@ bool SimpleCollisionMetrics::step_metrics(double t, double dt) {
 }
 
 void SimpleCollisionMetrics::calc_team_scores() {
-    // Create the score, if necessary
-    for (auto &team_id : teams_) {
-        if (team_coll_scores_.count(team_id) == 0) {
-            SimpleCollisionScore score;
-            score.set_weights(params_);
-            team_coll_scores_[team_id] = score;
-        }
-    }
     double end_time = -std::numeric_limits<double>::infinity();
     double beg_time = std::numeric_limits<double>::infinity();
     for (auto &kv : scores_) {
@@ -140,6 +132,17 @@ void SimpleCollisionMetrics::calc_team_scores() {
 
     double max_flight_time = end_time - beg_time;
 
+    // Create the score, if necessary
+    for (auto &team_id : teams_) {
+        if (team_coll_scores_.count(team_id) == 0) {
+            SimpleCollisionScore score;
+            score.set_weights(params_);
+            // Set the max flight time for each score:
+            score.set_max_flight_time(max_flight_time);
+            team_coll_scores_[team_id] = score;
+        }
+    }
+
     for (auto &kv : scores_) {
 
         SimpleCollisionScore &score = kv.second;
@@ -149,9 +152,6 @@ void SimpleCollisionMetrics::calc_team_scores() {
         if (score.flight_time_end() <= score.flight_time_start()) {
             score.set_flight_time_end(end_time);
         }
-
-        // Set the max flight time for each score:
-        score.set_max_flight_time(max_flight_time);
 
         int team_id = (*id_to_team_map_)[kv.first];
 
