@@ -246,7 +246,7 @@ if [ "$PKGSTOINSTALL" != "" ]; then
 
     else
 	    # Else, if user don't want to install missing dependencies
-	    echo "WARNING: Some dependencies may be missing. Please the following packages install manually: ${DEPENDENCIES[*]}."
+	    echo "WARNING: Some dependencies may be missing. Please install the following packages manually: ${DEPENDENCIES[*]}."
     fi
 else
     echo "All dependencies are installed. No further action is required."
