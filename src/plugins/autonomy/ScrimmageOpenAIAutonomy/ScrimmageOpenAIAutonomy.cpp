@@ -40,12 +40,15 @@
 
 #include <iostream>
 #include <limits>
+#include <cstddef>
+#include <stdexcept>
 
 #include <boost/algorithm/string.hpp>
 
 #include <chrono> // NOLINT
 #include <thread> // NOLINT
 
+namespace py = pybind11;
 namespace sp = scrimmage_proto;
 
 REGISTER_PLUGIN(scrimmage::Autonomy, scrimmage::autonomy::ScrimmageOpenAIAutonomy, ScrimmageOpenAIAutonomy_plugin)
@@ -57,12 +60,24 @@ ScrimmageOpenAIAutonomy::ScrimmageOpenAIAutonomy() :
     reward_range(-std::numeric_limits<double>::infinity(),
                  std::numeric_limits<double>::infinity()) {}
 
-void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &/*params*/) {
+void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
+    if (!learning_) {
+        py::module module = py::module::import(params.at("module").c_str());
+        py::object py_obj_class = module.attr(params.at("class").c_str());
+        py_obj_ = py_obj_class();
+        act_func_ = py_obj_.attr(params.at("act_func").c_str());
+    }
     print_err_on_exit = false;
     return;
 }
 
 bool ScrimmageOpenAIAutonomy::step_autonomy(double /*t*/, double /*dt*/) {
+
+    if (!learning_) {
+        py::object action = act_func_(1);
+    } else {
+    }
+    
     return false;
 }
 
@@ -70,5 +85,5 @@ std::pair<bool, double> ScrimmageOpenAIAutonomy::calc_reward(double /*t*/, doubl
     return {false, 0.0};
 }
 
-} // namespace autonomy
-} // namespace scrimmage
+}  // namespace autonomy
+}  // namespace scrimmage

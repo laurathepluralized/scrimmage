@@ -35,10 +35,16 @@
 
 #include <scrimmage/autonomy/Autonomy.h>
 
+#include <pybind11/pybind11.h>
+#include <pybind11/embed.h>
+#include <pybind11/eigen.h>
+
 #include <map>
 #include <vector>
 #include <string>
 #include <utility>
+
+namespace py = pybind11;
 
 namespace scrimmage {
 
@@ -68,7 +74,11 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     std::pair<double, double> reward_range;
     EnvParams action_space;
     EnvValues action;
+
+    py::object py_obj_;
+    py::object act_func_;
+    bool learning_ = false;
 };
-} // namespace autonomy
-} // namespace scrimmage
-#endif // INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
+}  // namespace autonomy
+}  // namespace scrimmage
+#endif  // INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_

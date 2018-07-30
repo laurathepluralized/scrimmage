@@ -41,7 +41,7 @@ If the plugin built successfuly, you will see the following output: ::
   [ 50%] Built target MyOpenAISensor_plugin
   [100%] Built target SimpleLearner
 
-In general, the scrimmage openai interface allows you to customize the environment
+In general, the scrimmage OpenAI interface allows you to customize the environment
 in the following ways:
 
     * n agents - The most common scenario is 1 agent but SCRIMMAGE also
@@ -51,7 +51,7 @@ in the following ways:
       one can have multiple agents operate independently.
 
     * Action/Observation space - this can be discrete, continuous, or combined
-      (the latter would a a ``TupleSpace`` in openai).
+      (the latter would a ``TupleSpace`` in OpenAI).
 
 For a demonstration of these basic combinations, see ``test/test_openai.py``. 
 For this tutorial, we will only be investigating how to develop a discrete
@@ -72,19 +72,19 @@ plugin, we will instead extend the ``ScrimmageOpenAIAutonomy`` autonomy plugin.
 In addition to the normal ``init`` and ``step_autonomy`` virtual methods,
 ``ScrimmageOpenAIAutonomy`` defines some extra components:
 
-    * ``reward_range`` - this setting maps directly to an openai environment's
+    * ``reward_range`` - this setting maps directly to an OpenAI environment's
       reward_range.
 
     * ``action_space`` - this is a struct containing a vector of ``discrete_counts``
       and ``continuous_extrema``. For each discrete action you want your autonomy
       to have, add an element to ``action_space.discrete_counts`` with the number
       of discrete actions (this will result in a ``Discrete`` or ``MultiDiscrete``
-      openai space, depending on whether there is one or multiple elements
+      OpenAI space, depending on whether there is one or multiple elements
       in ``action_space.discrete_counts``). Similarly, if you want continuous actions,
       set ``action_space.continuous_extrema`` with the low and high values
       (this will result in a ``Box`` space). If both ``discrete_counts``
       and ``continuous_extrema`` have elements then the resulting space will
-      be an openai ``TupleSpace``.
+      be an OpenAI ``TupleSpace``.
 
     * ``set_environment`` - a virtual method that will be called after
       all agents have been generated. This is meant to set ``reward_range``
@@ -211,7 +211,7 @@ Rewrite CMakeLists.txt for OpenAI Autonomy
 The ``SimpleLearner`` C++ code is now finished. Before we can build it though,
 we do need to make a small edit to the ``CMakeLists.txt``. Open up
 ``~/scrimmage/my-scrimmage-plugins/src/plugins/autonomy/SimpleLearner/CMakeLists.txt``
-and change line 15 from
+and add entries to the ``TARGET_LINK_LIBRARIES`` block as follows:
 
 .. code-block:: cmake
    :linenos:
@@ -337,7 +337,7 @@ Rewrite CMakeLists.txt for OpenAI Sensor
 The ``MyOpenAISensor`` C++ code is now finished. Before we can build it though,
 we do need to make a small edit to the ``CMakeLists.txt``. Open up
 ``~/scrimmage/my-scrimmage-plugins/src/plugins/autonomy/SimpleLearner/CMakeLists.txt``
-and change line 15 from
+and add entries to the ``TARGET_LINK_LIBRARIES`` block as follows:
 
 .. code-block:: cmake
    :linenos:
@@ -351,7 +351,7 @@ and change line 15 from
 OpenAI Mission XML File
 -----------------------
 
-Now that our code for SCRIMMGAE has been compiled, we can then create a simple
+Now that our code for SCRIMMAGE has been compiled, we can then create a simple
 mission xml file for it. We will save this xml at:
 ``~/scrimmage/my-scrimmage-plugins/missions/openai.xml``.
 
