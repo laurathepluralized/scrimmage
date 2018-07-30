@@ -48,10 +48,13 @@
 #include <chrono> // NOLINT
 #include <thread> // NOLINT
 
+namespace sc = scrimmage;
 namespace py = pybind11;
 namespace sp = scrimmage_proto;
 
-REGISTER_PLUGIN(scrimmage::Autonomy, scrimmage::autonomy::ScrimmageOpenAIAutonomy, ScrimmageOpenAIAutonomy_plugin)
+REGISTER_PLUGIN(sc::Autonomy,
+        sc::autonomy::ScrimmageOpenAIAutonomy,
+        ScrimmageOpenAIAutonomy_plugin)
 
 namespace scrimmage {
 namespace autonomy {
@@ -77,8 +80,17 @@ bool ScrimmageOpenAIAutonomy::step_autonomy(double /*t*/, double /*dt*/) {
         py::object action = act_func_(1);
     } else {
     }
-    
+
     return false;
+}
+
+void ScrimmageOpenAIAutonomy::get_action() {
+    if (learning_) {
+        return;
+    }
+    py::object py_obs = py_obj_; // something from py_openai_env.cpp
+    py::object py_action = act_func_(py_obj_);
+    action =  // something from py_openai_env.cpp
 }
 
 std::pair<bool, double> ScrimmageOpenAIAutonomy::calc_reward(double /*t*/, double /*dt*/) {

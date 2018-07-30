@@ -67,6 +67,7 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     // normal overrides
     void init(std::map<std::string, std::string> &params) override;
     bool step_autonomy(double t, double dt) override;
+    void get_action();
 
     // additional override
     virtual void set_environment() {}

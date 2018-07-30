@@ -91,6 +91,7 @@ std::pair<bool, double> RLSimple::calc_reward(double /*t*/, double /*dt*/) {
 }
 
 bool RLSimple::step_autonomy(double /*t*/, double /*dt*/) {
+    ScrimmageOpenAIAutonomy::get_action();
     // cppcheck-suppress variableScope
     int disc_idx = 0;
     // cppcheck-suppress variableScope
