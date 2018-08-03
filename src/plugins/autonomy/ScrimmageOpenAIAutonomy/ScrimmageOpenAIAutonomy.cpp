@@ -77,7 +77,7 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
 bool ScrimmageOpenAIAutonomy::step_autonomy(double /*t*/, double /*dt*/) {
 
     if (!learning_) {
-        py::object action = act_func_(1);
+        py::object py_action = act_func_(1);
     } else {
     }
 
@@ -88,9 +88,43 @@ void ScrimmageOpenAIAutonomy::get_action() {
     if (learning_) {
         return;
     }
-    py::object py_obs = py_obj_; // something from py_openai_env.cpp
-    py::object py_action = act_func_(py_obj_);
-    action =  // something from py_openai_env.cpp
+
+    /*
+    py::array_t<int> disc_actions;
+    py::array_t<double> cont_actions;
+    int* disc_action_data;
+    double* cont_action_data;
+
+    auto update_action_lists = [&](py::object space, py::object act) {
+        disc_actions = py::list();
+        cont_actions = py::list();
+        if (PyObject_IsInstance(space.ptr(), tuple_space_.ptr())) {
+            py::tuple action_list = act.cast<py::list>();
+            disc_actions = asarray_(action_list[0], py::str("int"));
+            cont_actions = asarray_(action_list[1], py::str("float"));
+            disc_action_data = static_cast<int*>(disc_actions.request().ptr);
+            cont_action_data = static_cast<double*>(cont_actions.request().ptr);
+        } else if (PyObject_IsInstance(space.ptr(), box_space_.ptr())) {
+            cont_actions = asarray_(act);
+            cont_action_data = static_cast<double*>(cont_actions.request().ptr);
+        } else {
+            disc_actions = asarray_(act);
+            disc_action_data = static_cast<int*>(disc_actions.request().ptr);
+        }
+    };
+     *
+     */
+    py_action_ = act_func_(py_obs);
+    py::tuple action_list = py_action_.cast<py::list>();
+    py::array_t<int> disc_actions;
+    py::array_t<double> cont_actions;
+    disc_actions = asarray_(action_list[0], py::str("int"));
+    cont_actions = asarray_(action_list[1], py::str("float"));
+    // The following two lines were the ones esquires3 pointed out as extra important here
+    action.discrete = static_cast<int*>(disc_actions.request().ptr);
+    action.continuous = static_cast<double*>(cont_actions.request().ptr);
+
+    // action =  // something from py_openai_env.cpp
 }
 
 std::pair<bool, double> ScrimmageOpenAIAutonomy::calc_reward(double /*t*/, double /*dt*/) {

@@ -78,6 +78,7 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
 
     py::object py_obj_;
     py::object act_func_;
+    py::object py_action_;
     bool learning_ = false;
 };
 }  // namespace autonomy

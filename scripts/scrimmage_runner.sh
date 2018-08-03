@@ -124,7 +124,7 @@ mkdir -p $ROOT_LOG
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 pushd $SCRIPT_DIR >& /dev/null
 
-python generate_scenarios.py \
+python3.5 generate_scenarios.py \
     --num_runs=$TASKS ${RANGES_OPTION} \
     --only_xml \
     $MISSION_FILE \
