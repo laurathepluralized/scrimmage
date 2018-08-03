@@ -114,7 +114,14 @@ void ScrimmageOpenAIAutonomy::get_action() {
     };
      *
      */
+    py::object py_obs;
+    py::float py_reward;
+    py::bool py_done;
+    py::dict py_info;
+
+    std::tie(py_obs, py_reward, py_done, py_info) = ScrimmageOpenAIEnv::step(py_action_)
     py_action_ = act_func_(py_obs);
+
     py::tuple action_list = py_action_.cast<py::list>();
     py::array_t<int> disc_actions;
     py::array_t<double> cont_actions;
