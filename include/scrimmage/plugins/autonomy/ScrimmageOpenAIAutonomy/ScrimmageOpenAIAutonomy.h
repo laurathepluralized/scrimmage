@@ -33,18 +33,33 @@
 #ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 #define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 
+// #include <scrimmage/../../python/scrimmage/bindings/src/py_openai_env.h>
 #include <scrimmage/autonomy/Autonomy.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
+#include <pybind11/numpy.h>
 #include <pybind11/eigen.h>
 
+#include <string>
+#include <algorithm>
+#include <limits>
+#include <chrono>
 #include <map>
 #include <vector>
-#include <string>
 #include <utility>
 
+
+#include <boost/optional.hpp>
+#include <boost/range/numeric.hpp>
+#include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/min_element.hpp>
+
 namespace py = pybind11;
+namespace sc = scrimmage;
+namespace ba = boost::adaptors;
+namespace br = boost::range;
 
 namespace scrimmage {
 
@@ -75,11 +90,13 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     std::pair<double, double> reward_range;
     EnvParams action_space;
     EnvValues action;
+    bool learning_ = false;
 
+    py::object obs_;
     py::object py_obj_;
     py::object act_func_;
     py::object py_action_;
-    bool learning_ = false;
+    py::object asarray_;
 };
 }  // namespace autonomy
 }  // namespace scrimmage

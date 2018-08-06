@@ -64,12 +64,33 @@ ScrimmageOpenAIAutonomy::ScrimmageOpenAIAutonomy() :
                  std::numeric_limits<double>::infinity()) {}
 
 void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
+    asarray_ = py::module::import("numpy").attr("asarray");
+
     if (!learning_) {
         py::module module = py::module::import(params.at("module").c_str());
         py::object py_obj_class = module.attr(params.at("class").c_str());
         py_obj_ = py_obj_class();
         act_func_ = py_obj_.attr(params.at("act_func").c_str());
     }
+
+    auto sensor_cb = [&](auto &msg) {
+
+        obs_ = msg->data;
+
+        /*
+        py::array_t<int> disc_obs;
+        py::array_t<double> cont_obs;
+        py::list obs_list = obs_.cast<py::list>();
+        disc_obs = obs_list[0].cast<py::array_t<int>>();
+        cont_obs = obs_list[1].cast<py::array_t<double>>();
+
+        uint32_t disc_beg_idx = 0;
+        uint32_t cont_beg_idx = 0;
+        int* r_disc = static_cast<int *>(disc_obs.request().ptr);
+        double* r_cont = static_cast<double *>(cont_obs.request().ptr);
+        */
+    };
+
     print_err_on_exit = false;
     return;
 }
@@ -77,7 +98,7 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
 bool ScrimmageOpenAIAutonomy::step_autonomy(double /*t*/, double /*dt*/) {
 
     if (!learning_) {
-        py::object py_action = act_func_(1);
+        py::object py_action = act_func_(obs_);
     } else {
     }
 
@@ -89,38 +110,8 @@ void ScrimmageOpenAIAutonomy::get_action() {
         return;
     }
 
-    /*
-    py::array_t<int> disc_actions;
-    py::array_t<double> cont_actions;
-    int* disc_action_data;
-    double* cont_action_data;
-
-    auto update_action_lists = [&](py::object space, py::object act) {
-        disc_actions = py::list();
-        cont_actions = py::list();
-        if (PyObject_IsInstance(space.ptr(), tuple_space_.ptr())) {
-            py::tuple action_list = act.cast<py::list>();
-            disc_actions = asarray_(action_list[0], py::str("int"));
-            cont_actions = asarray_(action_list[1], py::str("float"));
-            disc_action_data = static_cast<int*>(disc_actions.request().ptr);
-            cont_action_data = static_cast<double*>(cont_actions.request().ptr);
-        } else if (PyObject_IsInstance(space.ptr(), box_space_.ptr())) {
-            cont_actions = asarray_(act);
-            cont_action_data = static_cast<double*>(cont_actions.request().ptr);
-        } else {
-            disc_actions = asarray_(act);
-            disc_action_data = static_cast<int*>(disc_actions.request().ptr);
-        }
-    };
-     *
-     */
-    py::object py_obs;
-    py::float py_reward;
-    py::bool py_done;
-    py::dict py_info;
-
-    std::tie(py_obs, py_reward, py_done, py_info) = ScrimmageOpenAIEnv::step(py_action_)
-    py_action_ = act_func_(py_obs);
+    py::object py_obs = obs_;
+    py::object py_action = act_func_(py_obs); // actor_func comes from the init function
 
     py::tuple action_list = py_action_.cast<py::list>();
     py::array_t<int> disc_actions;
@@ -128,8 +119,8 @@ void ScrimmageOpenAIAutonomy::get_action() {
     disc_actions = asarray_(action_list[0], py::str("int"));
     cont_actions = asarray_(action_list[1], py::str("float"));
     // The following two lines were the ones esquires3 pointed out as extra important here
-    action.discrete = static_cast<int*>(disc_actions.request().ptr);
-    action.continuous = static_cast<double*>(cont_actions.request().ptr);
+    action.discrete.push_back(*static_cast<int*>(disc_actions.request().ptr));
+    action.continuous.push_back(*static_cast<double*>(cont_actions.request().ptr));
 
     // action =  // something from py_openai_env.cpp
 }

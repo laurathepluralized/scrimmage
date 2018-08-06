@@ -3,5 +3,6 @@
 <params>
   <library>ScrimmageOpenAIAutonomy_plugin</library>
   <module>test/samplemodel.py</module>
-  <act_func>act</act_func>
+  <act_func>_get_action</act_func>
+  <learning>false</learning>
 </params>
