@@ -52,7 +52,11 @@
       <autonomy
         discrete_x="true"
         discrete_y="true"
-        ctrl_y="false">RLSimple</autonomy>
+        ctrl_y="false"
+        learning="false"
+        py_file="test/samplemodel.py"
+        class="one_dim_discrete"
+        >RLSimple</autonomy>
       <y>0</y>
       <z>0</z>
   </entity_common>

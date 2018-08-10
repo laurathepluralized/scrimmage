@@ -2,7 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="http://gtri.gatech.edu"?>
 <params>
   <library>ScrimmageOpenAIAutonomy_plugin</library>
-  <module>test/samplemodel.py</module>
+  <py_file>test/samplemodel.py</py_file>
   <act_func>_get_action</act_func>
   <learning>false</learning>
 </params>

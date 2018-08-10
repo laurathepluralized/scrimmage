@@ -67,8 +67,8 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
     asarray_ = py::module::import("numpy").attr("asarray");
 
     if (!learning_) {
-        py::module module = py::module::import(params.at("module").c_str());
-        py::object py_obj_class = module.attr(params.at("class").c_str());
+        py::module mymodule = py::module::import(params.at("py_file").c_str());
+        py::object py_obj_class = mymodule.attr(params.at("class").c_str());
         py_obj_ = py_obj_class();
         act_func_ = py_obj_.attr(params.at("act_func").c_str());
     }
