@@ -35,6 +35,7 @@
 
 #include <scrimmage/autonomy/Autonomy.h>
 #include <scrimmage/sensor/Sensor.h>
+#include <scrimmage/python/ScrimmagePyOpenAIEnv.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
@@ -65,22 +66,10 @@ namespace br = boost::range;
 
 namespace scrimmage {
 namespace sensor {
-    // not sure why cppclean is compaining about this, since the
     // compiler can't make any progress in compiling without this block
-    // but cppclean doesn't have a // NOLINT type line-by-line ignore
-    // thing from what I can tell
+    // so ignore cppclean complaining about it for now
     class ScrimmageOpenAISensor;
 }
-
-struct EnvParams {
-    std::vector<double> discrete_count;
-    std::vector<std::pair<double, double>> continuous_extrema;
-};
-
-struct EnvValues {
-    std::vector<int> discrete;
-    std::vector<double> continuous;
-};
 
 namespace autonomy {
 
@@ -100,15 +89,6 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     EnvParams action_space;
     EnvValues action;
     bool learning_ = false;
-    py::object get_gym_space(const std::string &type);
-    py::object create_space(py::list discrete_count, py::list continuous_minima, py::list continuous_maxima);
-    void to_continuous(std::vector<std::pair<double, double>> &p,
-                                           py::list &minima,
-                                           py::list &maxima);
-    void to_discrete(std::vector<double> &p, py::list &maxima);
-
-    void create_action_space();
-    void create_observation_space();
 
     py::object py_observation_;
     py::object py_observation_space_;

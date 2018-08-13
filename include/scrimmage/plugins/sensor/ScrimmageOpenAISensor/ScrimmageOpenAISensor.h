@@ -34,7 +34,8 @@
 #define INCLUDE_SCRIMMAGE_PLUGINS_SENSOR_SCRIMMAGEOPENAISENSOR_SCRIMMAGEOPENAISENSOR_H_
 
 #include <scrimmage/sensor/Sensor.h>
-#include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
+#include <scrimmage/python/ScrimmagePyOpenAIEnv.h>
+// #include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
 
 namespace scrimmage {
 namespace sensor {

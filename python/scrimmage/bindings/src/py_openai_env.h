@@ -33,6 +33,7 @@
 #include <pybind11/pybind11.h>
 
 #include <scrimmage/parse/MissionParse.h>
+#include <scrimmage/python/ScrimmagePyOpenAIEnv.h>
 #include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
 #include <scrimmage/plugins/sensor/ScrimmageOpenAISensor/ScrimmageOpenAISensor.h>
 #include <scrimmage/simcontrol/SimControl.h>
@@ -45,8 +46,8 @@
 #include <tuple>
 
 class ScrimmageOpenAIEnv {
- public:
 
+ public:
     ScrimmageOpenAIEnv() {}
     ScrimmageOpenAIEnv(const std::string &mission_file,
                        bool enable_gui = false,

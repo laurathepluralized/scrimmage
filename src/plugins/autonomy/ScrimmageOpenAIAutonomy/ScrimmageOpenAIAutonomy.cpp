@@ -33,6 +33,7 @@
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/parse/ParseUtils.h>
 #include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
+#include <scrimmage/python/ScrimmagePyOpenAIEnv.h>
 #include <scrimmage/plugin_manager/RegisterPlugin.h>
 #include <scrimmage/pubsub/Message.h>
 #include <scrimmage/math/State.h>
@@ -74,7 +75,6 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
     }
 
     auto sensor_cb = [&](auto &msg) {
-
         py_observation_ = msg->data;
 
         /*
@@ -96,7 +96,6 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
 }
 
 bool ScrimmageOpenAIAutonomy::step_autonomy(double /*t*/, double /*dt*/) {
-
     if (!learning_) {
         py::object py_action = act_func_(py_observation_);
     } else {
@@ -104,188 +103,6 @@ bool ScrimmageOpenAIAutonomy::step_autonomy(double /*t*/, double /*dt*/) {
 
     return false;
 }
-
-
-py::object ScrimmageOpenAIAutonomy::get_gym_space(const std::string &type) {
-    return py::module::import("gym").attr("spaces").attr(type.c_str());
-}
-
-py::object ScrimmageOpenAIAutonomy::create_space(
-        py::list discrete_count,
-        py::list continuous_minima,
-        py::list continuous_maxima) {
-
-    py::module np = py::module::import("numpy");
-    py::object np_array = np.attr("array");
-    py::object np_float32 = np.attr("float32");
-
-    py::object gym_discrete_space = get_gym_space("Discrete");
-    py::object gym_multidiscrete_space = get_gym_space("MultiDiscrete");
-    py::object gym_box_space = get_gym_space("Box");
-    py::object gym_tuple_space = get_gym_space("Tuple");
-
-    py::object discrete_space = py::len(discrete_count) == 1 ?
-        gym_discrete_space(discrete_count[0]) :
-        gym_multidiscrete_space(discrete_count);
-
-    py::object continuous_space = gym_box_space(
-        np_array(continuous_minima),
-        np_array(continuous_maxima),
-        py::none(),
-        np_float32);
-
-    int len_discrete = py::len(discrete_count);
-    int len_continuous = py::len(continuous_minima);
-    if (len_discrete != 0 && len_continuous != 0) {
-        py::list spaces;
-        spaces.append(discrete_space);
-        spaces.append(continuous_space);
-        return gym_tuple_space(spaces);
-    } else if (len_discrete != 0) {
-        return discrete_space;
-    } else if (len_continuous != 0) {
-        return continuous_space;
-    } else {
-        // TODO: error handling
-        return py::object();
-    }
-}
-
-
-void ScrimmageOpenAIAutonomy::to_continuous(std::vector<std::pair<double, double>> &p,
-                                       py::list &minima,
-                                       py::list &maxima) {
-    for (auto &value : p) {
-        py::list min_max;
-        minima.append(value.first);
-        maxima.append(value.second);
-    }
-}
-
-void ScrimmageOpenAIAutonomy::to_discrete(std::vector<double> &p, py::list &maxima) {
-    for (auto &value : p) {
-        maxima.append(value);
-    }
-}
-
-void ScrimmageOpenAIAutonomy::create_action_space() {
-
-    if (ext_ctrl_vec_.size() == 1 || combine_actors_) {
-        py::list discrete_count;
-        py::list continuous_minima;
-        py::list continuous_maxima;
-
-        for (auto &a : ext_ctrl_vec_) {
-            a->set_environment();
-            to_discrete(a->action_space.discrete_count, discrete_count);
-            to_continuous(a->action_space.continuous_extrema, continuous_minima, continuous_maxima);
-        }
-
-        py_action_space_ =
-            create_space(discrete_count, continuous_minima, continuous_maxima);
-
-    } else {
-
-        py::list action_spaces;
-
-        for (auto &a : ext_ctrl_vec_) {
-            py::list discrete_count;
-            py::list continuous_minima;
-            py::list continuous_maxima;
-
-            a->set_environment();
-            to_discrete(a->action_space.discrete_count, discrete_count);
-            to_continuous(a->action_space.continuous_extrema, continuous_minima, continuous_maxima);
-
-            auto space =
-                create_space(discrete_count, continuous_minima, continuous_maxima);
-            action_spaces.append(space);
-        }
-
-        py::object tuple_space = get_gym_space("Tuple");
-        py_action_space_ = tuple_space(action_spaces);
-    }
-}
-
-void ScrimmageOpenAIAutonomy::create_observation_space() {
-
-    py::object tuple_space = get_gym_space("Tuple");
-
-    auto create_obs = [&](py::list &discrete_count, py::list &continuous_maxima) -> py::object {
-
-        int len_discrete = py::len(discrete_count);
-        int len_continuous = py::len(continuous_maxima);
-
-        py::array_t<int> discrete_array(len_discrete);
-        py::array_t<double> continuous_array(len_continuous);
-
-        if (len_discrete > 0 && len_continuous > 0) {
-            py::list obs;
-            obs.append(discrete_array);
-            obs.append(continuous_array);
-            return obs;
-        } else if (len_continuous > 0) {
-            return continuous_array;
-        } else {
-            return discrete_array;
-        }
-    };
-
-    if (ext_ctrl_vec_.size() == 1 || combine_actors_) {
-        py::list discrete_count;
-        py::list continuous_minima;
-        py::list continuous_maxima;
-
-        bool done = false;
-        for (auto &v : ext_sensor_vec_) {
-            if (done) break;
-            for (auto &s : v) {
-                s->set_observation_space();
-                to_discrete(s->observation_space.discrete_count, discrete_count);
-                to_continuous(s->observation_space.continuous_extrema, continuous_minima, continuous_maxima);
-
-                if (global_sensor_) {
-                    done = true;
-                    break;
-                }
-            }
-        }
-
-        py_observation_space_ =
-            create_space(discrete_count, continuous_minima, continuous_maxima);
-
-        py_observation_ = create_obs(discrete_count, continuous_maxima);
-
-    } else {
-
-        py::list observation_spaces;
-        py::list obs;
-
-        for (auto &v : ext_sensor_vec_) {
-            for (auto &s : v) {
-                py::list discrete_count;
-                py::list continuous_minima;
-                py::list continuous_maxima;
-
-                s->set_observation_space();
-                to_discrete(s->observation_space.discrete_count, discrete_count);
-                to_continuous(s->observation_space.continuous_extrema, continuous_minima, continuous_maxima);
-
-                auto space =
-                    create_space(discrete_count, continuous_minima, continuous_maxima);
-                observation_spaces.append(space);
-                obs.append(create_obs(discrete_count, continuous_maxima));
-            }
-        }
-
-        py_observation_space_ = tuple_space(observation_spaces);
-        py_observation_ = obs;
-    }
-}
-
-
-
-
 
 void ScrimmageOpenAIAutonomy::get_action() {
     if (learning_) {
