@@ -15,6 +15,8 @@ ADD_LIBRARY(${LIBRARY_NAME} SHARED
 
 TARGET_LINK_LIBRARIES(${LIBRARY_NAME}
   ${SCRIMMAGE_LIBS}
+  scrimmage-core
+  #ScrimmageOpenAISensor_plugin
   )
 
 

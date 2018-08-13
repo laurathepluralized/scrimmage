@@ -33,8 +33,8 @@
 #ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 #define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 
-// #include <scrimmage/../../python/scrimmage/bindings/src/py_openai_env.h>
 #include <scrimmage/autonomy/Autonomy.h>
+#include <scrimmage/sensor/Sensor.h>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
@@ -42,13 +42,15 @@
 #include <pybind11/eigen.h>
 
 #include <string>
+#include <memory>
+#include <vector>
+#include <thread>  // NOLINT
+#include <utility>
+#include <tuple>
 #include <algorithm>
 #include <limits>
-#include <chrono>
+#include <chrono>  // NOLINT
 #include <map>
-#include <vector>
-#include <utility>
-
 
 #include <boost/optional.hpp>
 #include <boost/range/numeric.hpp>
@@ -62,6 +64,13 @@ namespace ba = boost::adaptors;
 namespace br = boost::range;
 
 namespace scrimmage {
+namespace sensor {
+    // not sure why cppclean is compaining about this, since the
+    // compiler can't make any progress in compiling without this block
+    // but cppclean doesn't have a // NOLINT type line-by-line ignore
+    // thing from what I can tell
+    class ScrimmageOpenAISensor;
+}
 
 struct EnvParams {
     std::vector<double> discrete_count;
@@ -91,12 +100,32 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     EnvParams action_space;
     EnvValues action;
     bool learning_ = false;
+    py::object get_gym_space(const std::string &type);
+    py::object create_space(py::list discrete_count, py::list continuous_minima, py::list continuous_maxima);
+    void to_continuous(std::vector<std::pair<double, double>> &p,
+                                           py::list &minima,
+                                           py::list &maxima);
+    void to_discrete(std::vector<double> &p, py::list &maxima);
 
-    py::object obs_;
+    void create_action_space();
+    void create_observation_space();
+
+    py::object py_observation_;
+    py::object py_observation_space_;
     py::object py_obj_;
     py::object act_func_;
+    py::object py_action_space_;
     py::object py_action_;
     py::object asarray_;
+
+ protected:
+    bool combine_actors_ = false;
+    bool global_sensor_ = false;
+    using ExternalControlPtr = std::shared_ptr<sc::autonomy::ScrimmageOpenAIAutonomy>;
+    using ScrimmageOpenAISensorPtr = std::shared_ptr<sc::sensor::ScrimmageOpenAISensor>;
+
+    std::vector<ExternalControlPtr> ext_ctrl_vec_;
+    std::vector<std::vector<ScrimmageOpenAISensorPtr> > ext_sensor_vec_;
 };
 }  // namespace autonomy
 }  // namespace scrimmage
