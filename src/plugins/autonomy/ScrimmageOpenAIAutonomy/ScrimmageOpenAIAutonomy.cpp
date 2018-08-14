@@ -31,6 +31,7 @@
  */
 
 #include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/parse/ParseUtils.h>
@@ -45,8 +46,8 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include <chrono> // NOLINT
-#include <thread> // NOLINT
+#include <chrono>  // NOLINT
+#include <thread>  // NOLINT
 
 namespace sp = scrimmage_proto;
 namespace py = pybind11;
@@ -61,19 +62,46 @@ ScrimmageOpenAIAutonomy::ScrimmageOpenAIAutonomy() :
                  std::numeric_limits<double>::infinity()) {}
 
 void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
+    // import numpy asarray
+    asarray = py::module::import("numpy").attr("asarray");
+
+    // are we learning (true), or just using a trained model (false)?
+    learning = scrimmage::get<bool>("learning", params, false);
+    // get model python module
     const std::string module = params.at("module");
     py::object py_module = py::module::import(module.c_str());
+
+    // model's action function
+    const std::string py_act_fcn_str = params.at("act_fcn");
+    py_act_fcn = py_module.attr(py_act_fcn_str.c_str());
+
     print_err_on_exit = false;
     return;
 }
 
-bool ScrimmageOpenAIAutonomy::step_autonomy(double /*t*/, double /*dt*/) {
-    return false;
+bool ScrimmageOpenAIAutonomy::step_autonomy(double t, double /*dt*/) {
+    // clear previous step's actions
+    action.discrete.clear();
+    action.continuous.clear();
+
+    if (!learning) {
+        py::array_t<int> disc_actions;
+        disc_actions = py::list();
+        int* disc_action_data;
+
+        const py::object thisaction = py_act_fcn(static_cast<int>(t));
+        disc_actions = asarray(thisaction);
+        disc_action_data = static_cast<int*>(disc_actions.request().ptr);
+        for (int ii = 0; ii < disc_actions.size(); ++ii) {
+            action.discrete.push_back(disc_action_data[ii]);
+        }
+    }
+    return true;
 }
 
 std::pair<bool, double> ScrimmageOpenAIAutonomy::calc_reward(double /*t*/, double /*dt*/) {
     return {false, 0.0};
 }
 
-} // namespace autonomy
-} // namespace scrimmage
+}  // namespace autonomy
+}  // namespace scrimmage

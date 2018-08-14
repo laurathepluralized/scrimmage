@@ -3,4 +3,6 @@
 <params>
   <library>ScrimmageOpenAIAutonomy_plugin</library>
   <module>my_module</module>
+  <act_fcn>_get_action</act_fcn>
+  <learning>false</learning>
 </params>

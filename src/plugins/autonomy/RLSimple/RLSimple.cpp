@@ -36,6 +36,8 @@
 
 #include <scrimmage/plugins/autonomy/RLSimple/RLSimple.h>
 
+#include <iostream>
+
 REGISTER_PLUGIN(scrimmage::Autonomy, scrimmage::autonomy::RLSimple, RLSimple_plugin)
 
 namespace scrimmage {
@@ -90,7 +92,8 @@ std::pair<bool, double> RLSimple::calc_reward(double /*t*/, double /*dt*/) {
     return {done, reward};
 }
 
-bool RLSimple::step_autonomy(double /*t*/, double /*dt*/) {
+bool RLSimple::step_autonomy(double t, double dt) {
+    bool step_status = ScrimmageOpenAIAutonomy::step_autonomy(t, dt);
     // cppcheck-suppress variableScope
     int disc_idx = 0;
     // cppcheck-suppress variableScope
@@ -108,7 +111,7 @@ bool RLSimple::step_autonomy(double /*t*/, double /*dt*/) {
 
     vars_.output(output_vel_x_idx_, x_vel);
     vars_.output(output_vel_y_idx_, y_vel);
-    return true;
+    return step_status;
 }
 
 } // namespace autonomy

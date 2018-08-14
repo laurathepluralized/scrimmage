@@ -33,6 +33,7 @@
 #ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 #define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 
+#include <pybind11/pybind11.h>
 #include <scrimmage/autonomy/Autonomy.h>
 
 #include <map>
@@ -68,6 +69,9 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     std::pair<double, double> reward_range;
     EnvParams action_space;
     EnvValues action;
+    pybind11::object py_act_fcn;
+    pybind11::object asarray;
+    bool learning = false;
 };
 } // namespace autonomy
 } // namespace scrimmage

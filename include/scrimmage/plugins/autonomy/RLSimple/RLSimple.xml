@@ -8,5 +8,9 @@
 
   <ctrl_y>false</ctrl_y>
   <y_discrete>false</y_discrete>
+
+  <!-- Required params from ScrimmageOpenAIAutonomy -->
+  <learning>false</learning>
   <module>my_module</module>
+  <act_fcn>_get_action</act_fcn>
 </params>
