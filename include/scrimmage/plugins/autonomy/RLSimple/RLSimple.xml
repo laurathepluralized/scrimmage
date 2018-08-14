@@ -8,4 +8,5 @@
 
   <ctrl_y>false</ctrl_y>
   <y_discrete>false</y_discrete>
+  <module>my_module</module>
 </params>

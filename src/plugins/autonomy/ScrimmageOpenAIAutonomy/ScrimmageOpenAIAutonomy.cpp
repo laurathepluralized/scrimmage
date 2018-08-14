@@ -30,6 +30,8 @@
  *
  */
 
+#include <pybind11/pybind11.h>
+
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/parse/ParseUtils.h>
 #include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
@@ -47,6 +49,7 @@
 #include <thread> // NOLINT
 
 namespace sp = scrimmage_proto;
+namespace py = pybind11;
 
 REGISTER_PLUGIN(scrimmage::Autonomy, scrimmage::autonomy::ScrimmageOpenAIAutonomy, ScrimmageOpenAIAutonomy_plugin)
 
@@ -57,7 +60,9 @@ ScrimmageOpenAIAutonomy::ScrimmageOpenAIAutonomy() :
     reward_range(-std::numeric_limits<double>::infinity(),
                  std::numeric_limits<double>::infinity()) {}
 
-void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &/*params*/) {
+void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
+    const std::string module = params.at("module");
+    py::object py_module = py::module::import(module.c_str());
     print_err_on_exit = false;
     return;
 }
