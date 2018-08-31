@@ -30,23 +30,35 @@
  *
  */
 
-#ifndef INCLUDE_SCRIMMAGE_PLUGINS_SENSOR_SCRIMMAGEOPENAISENSOR_SCRIMMAGEOPENAISENSOR_H_
-#define INCLUDE_SCRIMMAGE_PLUGINS_SENSOR_SCRIMMAGEOPENAISENSOR_SCRIMMAGEOPENAISENSOR_H_
+#ifndef INCLUDE_SCRIMMAGE_PYTHON_PY_BINDINGS_LIB_H_
+#define INCLUDE_SCRIMMAGE_PYTHON_PY_BINDINGS_LIB_H_
 
-#include <scrimmage/sensor/Sensor.h>
-#include <scrimmage/python/py_bindings_lib.h>
-// #include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
+#include <vector>
+#include <utility>
 
 namespace scrimmage {
-namespace sensor {
-class ScrimmageOpenAISensor : public scrimmage::Sensor {
- public:
-    EnvParams observation_space;
-    ScrimmageOpenAISensor();
-    virtual void set_observation_space() {}
-    virtual void get_observation(int* /*data*/, uint32_t /*beg_idx*/, uint32_t /*end_idx*/) {}
-    virtual void get_observation(double* /*data*/, uint32_t /*beg_idx*/, uint32_t /*end_idx*/) {}
+
+struct EnvParams {
+    std::vector<double> discrete_count;
+    std::vector<std::pair<double, double>> continuous_extrema;
 };
-} // namespace sensor
-} // namespace scrimmage
-#endif // INCLUDE_SCRIMMAGE_PLUGINS_SENSOR_SCRIMMAGEOPENAISENSOR_SCRIMMAGEOPENAISENSOR_H_
+
+struct EnvValues {
+    std::vector<int> discrete;
+    std::vector<double> continuous;
+};
+
+
+namespace autonomy {
+class ScrimmageOpenAIAutonomy;
+// using ScrimmageOpenAIAutonomyPtr = std::shared_ptr<scrimmage::autonomy::ScrimmageOpenAIAutonomy>;
+}  // namespace autonomy
+
+namespace sensor {
+class ScrimmageOpenAISensor;
+// using ScrimmageOpenAISensorPtr = std::shared_ptr<scrimmage::sensor::ScrimmageOpenAISensor>;
+}  // namespace sensor
+
+}  // namespace scrimmage
+
+#endif  // INCLUDE_SCRIMMAGE_PYTHON_PY_BINDINGS_LIB_H_

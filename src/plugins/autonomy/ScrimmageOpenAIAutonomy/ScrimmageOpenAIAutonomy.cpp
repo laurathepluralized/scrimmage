@@ -35,7 +35,9 @@
 
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/parse/ParseUtils.h>
+// #include <scrimmage/python/py_bindings_lib.h>
 #include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
+#include <scrimmage/plugins/sensor/ScrimmageOpenAISensor/ScrimmageOpenAISensor.h>
 #include <scrimmage/plugin_manager/RegisterPlugin.h>
 #include <scrimmage/pubsub/Message.h>
 #include <scrimmage/math/State.h>
@@ -43,6 +45,8 @@
 
 #include <iostream>
 #include <limits>
+#include <unordered_map>
+#include <vector>
 
 #include <boost/algorithm/string.hpp>
 
@@ -75,6 +79,15 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
     const std::string py_act_fcn_str = params.at("act_fcn");
     py_act_fcn = py_module.attr(py_act_fcn_str.c_str());
 
+    // Sensors (with base class ScrimmageOpenAISensor) for non-learning mode
+    for (auto &sens : parent_->sensors()) {
+        auto s_cast =
+            std::dynamic_pointer_cast<scrimmage::sensor::ScrimmageOpenAISensor>(sens.second);
+        if (s_cast) {
+            sensors.push_back(s_cast);
+        }
+    }
+
     print_err_on_exit = false;
     return;
 }
@@ -85,6 +98,16 @@ bool ScrimmageOpenAIAutonomy::step_autonomy(double t, double /*dt*/) {
     action.continuous.clear();
 
     if (!learning) {
+        for (auto &sens : sensors) {
+            double* tempdat;
+            uint32_t beg_idx = 0;
+            uint32_t end_idx = 2;
+
+            sens->get_observation(tempdat, beg_idx, end_idx);
+            std::cout << tempdat << std::endl;
+            // py_sensor_data = py::array(sens->get_observation());
+            // py::print(py_sensor_data);
+        }
         py::array_t<int> disc_actions;
         disc_actions = py::list();
         int* disc_action_data;

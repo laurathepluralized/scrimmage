@@ -35,6 +35,7 @@
 
 #include <pybind11/pybind11.h>
 #include <scrimmage/autonomy/Autonomy.h>
+#include <scrimmage/python/py_bindings_lib.h>
 
 #include <map>
 #include <vector>
@@ -43,15 +44,15 @@
 
 namespace scrimmage {
 
-struct EnvParams {
-    std::vector<double> discrete_count;
-    std::vector<std::pair<double, double>> continuous_extrema;
-};
+// struct EnvParams {
+//     std::vector<double> discrete_count;
+//     std::vector<std::pair<double, double>> continuous_extrema;
+// };
 
-struct EnvValues {
-    std::vector<int> discrete;
-    std::vector<double> continuous;
-};
+// struct EnvValues {
+//     std::vector<int> discrete;
+//     std::vector<double> continuous;
+// };
 
 namespace autonomy {
 
@@ -72,6 +73,8 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     pybind11::object py_act_fcn;
     pybind11::object asarray;
     bool learning = false;
+    pybind11::object py_sensor_data;
+    std::vector<std::shared_ptr<scrimmage::sensor::ScrimmageOpenAISensor>> sensors;
 };
 } // namespace autonomy
 } // namespace scrimmage

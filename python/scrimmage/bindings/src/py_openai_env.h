@@ -33,6 +33,7 @@
 #include <pybind11/pybind11.h>
 
 #include <scrimmage/parse/MissionParse.h>
+#include <scrimmage/python/py_bindings_lib.h>
 #include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
 #include <scrimmage/plugins/sensor/ScrimmageOpenAISensor/ScrimmageOpenAISensor.h>
 #include <scrimmage/simcontrol/SimControl.h>
