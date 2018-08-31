@@ -33,17 +33,20 @@
 #ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 #define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_SCRIMMAGEOPENAIAUTONOMY_SCRIMMAGEOPENAIAUTONOMY_H_
 
-#include <pybind11/pybind11.h>
-#include <scrimmage/autonomy/Autonomy.h>
+// #include <pybind11/pybind11.h>
 #include <scrimmage/python/py_bindings_lib.h>
+#include <scrimmage/plugins/sensor/ScrimmageOpenAISensor/ScrimmageOpenAISensor.h>
+#include <scrimmage/autonomy/Autonomy.h>
 
 #include <map>
 #include <vector>
 #include <string>
 #include <utility>
 
+// namespace pbl = py_bindings_lib;
 namespace scrimmage {
 
+class ScrimmageOpenAISensor;
 // struct EnvParams {
 //     std::vector<double> discrete_count;
 //     std::vector<std::pair<double, double>> continuous_extrema;
@@ -73,7 +76,8 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     pybind11::object py_act_fcn;
     pybind11::object asarray;
     bool learning = false;
-    pybind11::object py_sensor_data;
+    // pybind11::object observation_space;
+    pybind11::object observation;
     std::vector<std::shared_ptr<scrimmage::sensor::ScrimmageOpenAISensor>> sensors;
 };
 } // namespace autonomy

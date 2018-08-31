@@ -30,14 +30,13 @@
  *
  */
 
+// #include <scrimmage/python/py_bindings_lib.h>
+#include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/parse/ParseUtils.h>
-// #include <scrimmage/python/py_bindings_lib.h>
-#include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
-#include <scrimmage/plugins/sensor/ScrimmageOpenAISensor/ScrimmageOpenAISensor.h>
 #include <scrimmage/plugin_manager/RegisterPlugin.h>
 #include <scrimmage/pubsub/Message.h>
 #include <scrimmage/math/State.h>
@@ -55,6 +54,7 @@
 
 namespace sp = scrimmage_proto;
 namespace py = pybind11;
+namespace sc = scrimmage;
 
 REGISTER_PLUGIN(scrimmage::Autonomy, scrimmage::autonomy::ScrimmageOpenAIAutonomy, ScrimmageOpenAIAutonomy_plugin)
 
@@ -67,7 +67,12 @@ ScrimmageOpenAIAutonomy::ScrimmageOpenAIAutonomy() :
 
 void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
     // import numpy asarray
-    asarray = py::module::import("numpy").attr("asarray");
+    py::module np = py::module::import("numpy");
+    asarray = np.attr("asarray");
+
+    py::object np_array = np.attr("array");
+    py::object np_float32 = np.attr("float32");
+
 
     // are we learning (true), or just using a trained model (false)?
     learning = scrimmage::get<bool>("learning", params, false);
@@ -79,14 +84,51 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
     const std::string py_act_fcn_str = params.at("act_fcn");
     py_act_fcn = py_module.attr(py_act_fcn_str.c_str());
 
+    py::list continuous_minima;
+    py::list continuous_maxima;
+    py::list discrete_count;
+
+    // auto create_obs = [&](py::list &discrete_count, py::list &continuous_maxima) -> py::object {
+    //
+    //     int len_discrete = py::len(discrete_count);
+    //     int len_continuous = py::len(continuous_maxima);
+    //
+    //     py::array_t<int> discrete_array(len_discrete);
+    //     py::array_t<double> continuous_array(len_continuous);
+    //
+    //     if (len_discrete > 0 && len_continuous > 0) {
+    //         py::list obs;
+    //         obs.append(discrete_array);
+    //         obs.append(continuous_array);
+    //         return obs;
+    //     } else if (len_continuous > 0) {
+    //         return continuous_array;
+    //     } else {
+    //         return discrete_array;
+    //     }
+    // };
+
     // Sensors (with base class ScrimmageOpenAISensor) for non-learning mode
     for (auto &sens : parent_->sensors()) {
         auto s_cast =
             std::dynamic_pointer_cast<scrimmage::sensor::ScrimmageOpenAISensor>(sens.second);
         if (s_cast) {
+            s_cast->set_observation_space();
+            auto obs_space = s_cast->observation_space;
+            to_continuous(s_cast->observation_space.continuous_extrema, continuous_minima, continuous_maxima);
+            to_discrete(s_cast->observation_space.discrete_count, discrete_count);
             sensors.push_back(s_cast);
         }
     }
+    observation = create_obs(discrete_count, continuous_maxima);
+
+    /* const std::string boxstr = "Box"; */
+    /* py::object gym_box_space = py::module::import("gym").attr("spaces").attr(boxstr.c_str()); */
+    /* py::object observation_space = gym_box_space( */
+    /*     np_array(continuous_minima), */
+    /*     np_array(continuous_maxima), */
+    /*     py::none(), */
+    /*     np_float32); */
 
     print_err_on_exit = false;
     return;
@@ -98,16 +140,26 @@ bool ScrimmageOpenAIAutonomy::step_autonomy(double t, double /*dt*/) {
     action.continuous.clear();
 
     if (!learning) {
-        for (auto &sens : sensors) {
-            double* tempdat;
-            uint32_t beg_idx = 0;
-            uint32_t end_idx = 2;
 
-            sens->get_observation(tempdat, beg_idx, end_idx);
-            std::cout << tempdat << std::endl;
-            // py_sensor_data = py::array(sens->get_observation());
-            // py::print(py_sensor_data);
+        auto call_get_obs = [&](auto *data, uint32_t &beg_idx, auto sensor, int obs_size) {
+            uint32_t end_idx = beg_idx + obs_size;
+            if (end_idx != beg_idx) {
+                sensor->get_observation(data, beg_idx, end_idx);
+                beg_idx = end_idx;
+            }
+        };
+
+        py::array_t<double> cont_obs = observation.cast<py::array_t<double>>();
+
+        uint32_t cont_beg_idx = 0;
+        double* r_cont = static_cast<double *>(cont_obs.request().ptr);
+
+        for (auto &s : sensors) {
+            auto obs_space = s->observation_space;
+            call_get_obs(r_cont, cont_beg_idx, s, obs_space.continuous_extrema.size());
+            py::print(r_cont);
         }
+
         py::array_t<int> disc_actions;
         disc_actions = py::list();
         int* disc_action_data;

@@ -53,6 +53,9 @@
         discrete_x="true"
         discrete_y="true"
         ctrl_y="false"
+        learning="false"
+        module="my_module"
+        act_fcn="_get_action"
         >RLSimple</autonomy>
       <y>0</y>
       <z>0</z>
