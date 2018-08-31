@@ -88,26 +88,6 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
     py::list continuous_maxima;
     py::list discrete_count;
 
-    // auto create_obs = [&](py::list &discrete_count, py::list &continuous_maxima) -> py::object {
-    //
-    //     int len_discrete = py::len(discrete_count);
-    //     int len_continuous = py::len(continuous_maxima);
-    //
-    //     py::array_t<int> discrete_array(len_discrete);
-    //     py::array_t<double> continuous_array(len_continuous);
-    //
-    //     if (len_discrete > 0 && len_continuous > 0) {
-    //         py::list obs;
-    //         obs.append(discrete_array);
-    //         obs.append(continuous_array);
-    //         return obs;
-    //     } else if (len_continuous > 0) {
-    //         return continuous_array;
-    //     } else {
-    //         return discrete_array;
-    //     }
-    // };
-
     // Sensors (with base class ScrimmageOpenAISensor) for non-learning mode
     for (auto &sens : parent_->sensors()) {
         auto s_cast =
@@ -121,14 +101,6 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
         }
     }
     observation = create_obs(discrete_count, continuous_maxima);
-
-    /* const std::string boxstr = "Box"; */
-    /* py::object gym_box_space = py::module::import("gym").attr("spaces").attr(boxstr.c_str()); */
-    /* py::object observation_space = gym_box_space( */
-    /*     np_array(continuous_minima), */
-    /*     np_array(continuous_maxima), */
-    /*     py::none(), */
-    /*     np_float32); */
 
     print_err_on_exit = false;
     return;
@@ -157,14 +129,15 @@ bool ScrimmageOpenAIAutonomy::step_autonomy(double t, double /*dt*/) {
         for (auto &s : sensors) {
             auto obs_space = s->observation_space;
             call_get_obs(r_cont, cont_beg_idx, s, obs_space.continuous_extrema.size());
-            py::print(r_cont);
+            observation = asarray(r_cont);
+            py::print(observation);
         }
 
         py::array_t<int> disc_actions;
         disc_actions = py::list();
         int* disc_action_data;
 
-        const py::object thisaction = py_act_fcn(static_cast<int>(t));
+        const py::object thisaction = py_act_fcn(observation);
         disc_actions = asarray(thisaction);
         disc_action_data = static_cast<int*>(disc_actions.request().ptr);
         for (int ii = 0; ii < disc_actions.size(); ++ii) {

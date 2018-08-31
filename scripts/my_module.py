@@ -6,6 +6,5 @@ def _get_action(i):
 
     Argument:
     i -- the state the agent is in
-    what?! -- pydocstring still saying needs docstring despite this being it
     """
     return np.array([1, 1] if i < 100 else [0, 0], dtype=int)

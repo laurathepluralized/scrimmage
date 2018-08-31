@@ -71,7 +71,6 @@
 
 namespace py = pybind11;
 namespace sc = scrimmage;
-// namespace pbl = py_bindings_lib;
 namespace ba = boost::adaptors;
 namespace br = boost::range;
 using sc::to_continuous;
