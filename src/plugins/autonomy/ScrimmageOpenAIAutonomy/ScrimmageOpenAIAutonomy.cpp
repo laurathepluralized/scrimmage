@@ -130,7 +130,7 @@ bool ScrimmageOpenAIAutonomy::step_autonomy(double t, double /*dt*/) {
             auto obs_space = s->observation_space;
             call_get_obs(r_cont, cont_beg_idx, s, obs_space.continuous_extrema.size());
             observation = asarray(r_cont);
-            py::print(observation);
+            // py::print(observation);
         }
 
         py::array_t<int> disc_actions;

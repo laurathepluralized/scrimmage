@@ -46,7 +46,6 @@ namespace sensor {
 
 void RLTimeSensor::get_observation(double *data, uint32_t beg_idx, uint32_t /*end_idx*/) {
     data[beg_idx] = time_->t();
-    std::cout << "time is " << time_->t() << std::endl;
 }
 
 void RLTimeSensor::set_observation_space() {
