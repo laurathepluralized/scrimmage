@@ -46,6 +46,8 @@
 #include <memory>
 #include <string>
 
+#include <rapidxml/rapidxml.hpp>
+
 namespace sp = scrimmage_proto;
 
 namespace scrimmage {
@@ -115,6 +117,7 @@ class MissionParse {
     bool network_gui();
     void set_network_gui(bool enable);
     void set_start_paused(bool paused);
+    void xml_doc(rapidxml::xml_document<> &copydoc, std::string &content);
 
     AttributeMap &attributes();
     std::map<std::string, std::string> & params();
@@ -200,6 +203,8 @@ class MissionParse {
     std::shared_ptr<GeographicLib::LocalCartesian> proj_;
 
     std::shared_ptr<scrimmage_proto::UTMTerrain> utm_terrain_;
+
+    std::string content_;
 };
 using MissionParsePtr = std::shared_ptr<MissionParse>;
 } // namespace scrimmage

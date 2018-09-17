@@ -76,6 +76,10 @@ bool MissionParse::parse(const std::string &filename) {
     buffer << file.rdbuf();
     file.close();
     std::string content(buffer.str());
+    // making class object (content_) separate from string read by
+    // rapidxml (content), since rapidxml modifies strings it reads
+    // and function xml_doc needs to read a copy of this string too
+    content_ = content;
     doc.parse<0>(&content[0]);
 
     rapidxml::xml_node<> *runscript_node = doc.first_node("runscript");
@@ -857,4 +861,22 @@ void MissionParse::set_time_warp(double warp) {time_warp_ = warp;}
 void MissionParse::set_network_gui(bool enable) {network_gui_ = enable;}
 
 void MissionParse::set_start_paused(bool paused) {start_paused_ = paused;}
+
+void MissionParse::xml_doc(rx::xml_document<> &copydoc, std::string &content) {
+    // Since copying a rapidxml::xml_document<> is apparently inadvisable,
+    // we instead copy the const string content_ into string content (which
+    // is accessible in whatever calls this function) and parse a new
+    // rapidxml::xml_document<> copydoc from that.
+    // (Copying the string so we can safely manipulate it, as well as so that
+    // we can control its scope, since copydoc contains pointers to locations
+    // in copydoc)
+    // reasoning explained here: https://stackoverflow.com/a/25618945/4774285
+    content = content_;
+    std::cout << content_ << "\n\n" << std::endl;
+    std::cout << content << std::endl;
+
+    copydoc.parse<0>(&content[0]);
+}
+
+
 } // namespace scrimmage
