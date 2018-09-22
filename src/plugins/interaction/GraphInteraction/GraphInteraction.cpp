@@ -33,6 +33,7 @@
 #include <scrimmage/plugins/interaction/GraphInteraction/GraphInteraction.h>
 
 #include <scrimmage/common/Utilities.h>
+#include <scrimmage/common/FileSearch.h>
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/plugin_manager/RegisterPlugin.h>
 #include <scrimmage/math/State.h>
@@ -51,10 +52,14 @@
 #include <GeographicLib/LocalCartesian.hpp>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/optional.hpp>
 
 using std::cout;
 using std::endl;
 
+namespace fs = ::boost::filesystem;
 namespace sc = scrimmage;
 namespace sm = scrimmage_msgs;
 
@@ -84,6 +89,18 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
     std::string default_file_name = "default";
     std::string graph_file_name = sc::get<std::string>("graph_file", plugin_params, default_file_name);
     std::string labels_file_name = sc::get<std::string>("labels_file", plugin_params, default_file_name);
+    std::map<std::string, std::string> data_params;
+    if (sc::parse_autonomy_data(plugin_params, data_params)) {
+        FileSearch file_search;
+        std::string graph_ext = fs::path(graph_file_name).extension().string();
+        graph_file_name = data_params.at("graph_file");
+        file_search.find_file(graph_file_name, graph_ext, "SCRIMMAGE_DATA_PATH",
+                    graph_file_name);
+        labels_file_name = data_params.at("labels_file");
+        std::string labels_ext = fs::path(labels_file_name).extension().string();
+        file_search.find_file(labels_file_name, labels_ext, "SCRIMMAGE_DATA_PATH",
+                    labels_file_name);
+    }
     vis_graph_ = sc::get<bool>("visualize_graph", plugin_params, true);
     id_ = sc::get<int>("id", plugin_params, 1);
     if (graph_file_name == default_file_name)
