@@ -41,6 +41,7 @@
 #include <map>
 #include <list>
 #include <string>
+#include <vector>
 
 namespace scrimmage {
 namespace interaction {
@@ -57,6 +58,9 @@ class GraphInteraction : public scrimmage::EntityInteraction {
     bool vis_graph_ = true;
     PublisherPtr pub_graph_;
     int id_ = 1;
+    std::vector<std::vector<int>> colors_rgb_;
+    std::string partitions_k_;
+
 };
 } // namespace interaction
 } // namespace scrimmage

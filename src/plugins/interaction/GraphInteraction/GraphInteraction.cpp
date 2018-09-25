@@ -48,6 +48,7 @@
 #include <limits>
 #include <iostream>
 #include <fstream>
+#include <deque>
 
 #include <GeographicLib/LocalCartesian.hpp>
 
@@ -58,6 +59,7 @@
 
 using std::cout;
 using std::endl;
+using std::stoi;
 
 namespace fs = ::boost::filesystem;
 namespace sc = scrimmage;
@@ -88,18 +90,23 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
     pub_graph_ = advertise("GlobalNetwork", "Graph");
     std::string default_file_name = "default";
     std::string graph_file_name = sc::get<std::string>("graph_file", plugin_params, default_file_name);
+    std::string partition_file_name = sc::get<std::string>("partition_file", plugin_params, default_file_name);
     std::string labels_file_name = sc::get<std::string>("labels_file", plugin_params, default_file_name);
     std::map<std::string, std::string> data_params;
     if (sc::parse_autonomy_data(plugin_params, data_params)) {
         FileSearch file_search;
-        std::string graph_ext = fs::path(graph_file_name).extension().string();
         graph_file_name = data_params.at("graph_file");
+        std::string graph_ext = fs::path(graph_file_name).extension().string();
         file_search.find_file(graph_file_name, graph_ext, "SCRIMMAGE_DATA_PATH",
                     graph_file_name);
         labels_file_name = data_params.at("labels_file");
         std::string labels_ext = fs::path(labels_file_name).extension().string();
         file_search.find_file(labels_file_name, labels_ext, "SCRIMMAGE_DATA_PATH",
                     labels_file_name);
+        partition_file_name = data_params.at("partitions_file");
+        partitions_k_ = fs::path(partition_file_name).extension().string();
+        file_search.find_file(partition_file_name, partitions_k_, "SCRIMMAGE_DATA_PATH",
+                    partition_file_name, true);
     }
     vis_graph_ = sc::get<bool>("visualize_graph", plugin_params, true);
     id_ = sc::get<int>("id", plugin_params, 1);
@@ -108,6 +115,7 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
 
     std::ifstream graph_file(graph_file_name);
     std::ifstream names_file(labels_file_name);
+    std::ifstream partition_file(partition_file_name);
 
     bool found_labels = true;
     if (!names_file.good()) {
@@ -115,11 +123,40 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
         std::cout << labels_file_name << " not found. Resuming with default labels" << std::endl;
     }
 
+    std::vector<int> partitions;
+    if (partition_file.is_open()) {
+        std::string line;
+        while (std::getline(partition_file, line)) {
+            partitions.push_back(stoi(line));
+        }
+    } else {
+        cout << "Can't open partition file " << partition_file_name << endl;
+    }
+
+    std::string colors_rgb_str = sc::get<std::string>("colors_rgb", plugin_params, "");
+    std::vector<std::vector<std::string>> vecs;
+    if (!sc::get_vec_of_vecs(colors_rgb_str, vecs)) {
+        cout << "Failed to parse colors_rgb." << endl;
+        return false;
+    }
+    // Convert string representation of RGB values into Eigen::Vector3d
+    for (std::vector<std::string> vec : vecs) {
+        if (vec.size() != 3) {
+            cout << "Invalid RGB vector size in: " << colors_rgb_str << endl;
+            return false;
+        }
+        std::vector<int> rgbints = {stoi(vec[0]), stoi(vec[1]), stoi(vec[2])};
+        colors_rgb_.push_back(rgbints);
+    }
+
     if (graph_file.is_open()) {
+        unsigned int num_nodes = 0;
         std::string line;
         // Skip header until the node and edge count
         while (std::getline(graph_file, line)) {
             if (line[0] != '#') { // Line is node count
+                num_nodes = stoi(line);
+                cout << num_nodes << endl;
                 std::getline(graph_file, line); // Line is edge count
                 break;
             }
@@ -129,15 +166,17 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
         std::map<int, Eigen::Vector3d> nodes;
         auto graph_msg = std::make_shared<sc::Message<sm::Graph>>();
         graph_msg->data.set_id(id_);
+        std::deque<std::vector<int>> partition_node_colors;
         unsigned int edge_counter = 0;
+        unsigned int node_counter = 0;
         while (std::getline(graph_file, line)) {
             std::vector<std::string> words;
             boost::split(words, line, [](char c) { return c == ' '; });
 
-            bool is_node = words.size() == 3;
-            if (is_node) {
+            if (node_counter < num_nodes) {
                 double x, y, z;
                 int id = std::stoi(words[0]);
+                int part = partitions[node_counter];
                 double latitude = std::stod(words[1]), longitude = std::stod(words[2]);
                 parent_->projection()->Forward(latitude, longitude, 0.0, x, y, z);
                 nodes[id] = Eigen::Vector3d(x, y, z);
@@ -145,6 +184,8 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
                 auto node_ptr = graph_msg->data.add_nodes();
                 node_ptr->set_id(id);
                 sc::set(node_ptr->mutable_point(), nodes[id]);
+                partition_node_colors.push_back({colors_rgb_[part][0], colors_rgb_[part][1], colors_rgb_[part][2]});
+                node_counter++;
             } else { // is edge
                 edge_counter++;
                 int id_start = std::stoi(words[0]), id_end = std::stoi(words[1]);
@@ -170,7 +211,7 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
                         auto edge_shape = std::make_shared<scrimmage_proto::Shape>();
                         edge_shape->set_persistent(true);
                         edge_shape->set_opacity(1.0);
-                        scrimmage::set(edge_shape->mutable_color(), 255, 0, 0);
+                        scrimmage::set(edge_shape->mutable_color(), 0, 0, 0);
                         scrimmage::set(edge_shape->mutable_line()->mutable_start(), nodes[id_start]);
                         scrimmage::set(edge_shape->mutable_line()->mutable_end(), nodes[id_end]);
                         draw_shape(edge_shape);
@@ -182,12 +223,24 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
 
         // Visualize the Nodes
         if (vis_graph_) {
+            int counter_viz = 0;
             auto node_shape = std::make_shared<scrimmage_proto::Shape>();
             node_shape->set_persistent(true);
             for (auto node : nodes) {
                 scrimmage::set(node_shape->mutable_pointcloud()->add_point(), node.second[0], node.second[1], node.second[2]);
+                // partition_node_colors.push_back({colors_rgb_[part][0], colors_rgb_[part][1], colors_rgb_[part][2]});
+                std::vector<int> nodecolor = partition_node_colors.front();
+                partition_node_colors.pop_front();
+                int redlevel = nodecolor[0];
+                int greenlevel = nodecolor[1];
+                int bluelevel = nodecolor[2];
+                sc::set(node_shape->mutable_pointcloud()->add_color(), redlevel, greenlevel, bluelevel);
+                if (counter_viz % 1000 == 0) {
+                    cout << counter_viz << endl;
+                }
+                counter_viz++;
             }
-            node_shape->mutable_pointcloud()->set_size(3);
+            node_shape->mutable_pointcloud()->set_size(6);
             draw_shape(node_shape);
         }
 
