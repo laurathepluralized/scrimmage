@@ -117,7 +117,6 @@ def test_one_dim_discrete():
     global_sensor = False
     env, obs, total_reward = \
         _run_test(VERSION, combine_actors, global_sensor, _get_action)
-    import ipdb; ipdb.set_trace()
 
     assert len(obs[0]) == 1
     assert obs[0][0] == 0
@@ -310,12 +309,12 @@ def test_timestep():
 
 if __name__ == '__main__':
     test_one_dim_discrete()
-    # test_two_dim_discrete()
-    # test_one_dim_continuous()
-    # test_two_dim_continuous()
-    # test_two_dim_tuple()
-    # test_two_combined_veh_dim_discrete()
-    # test_two_not_combined_veh_dim_discrete()
-    # test_sim_end()
-    # test_two_combined_veh_dim_discrete_global_sensor()
-    # test_timestep()
+    test_two_dim_discrete()
+    test_one_dim_continuous()
+    test_two_dim_continuous()
+    test_two_dim_tuple()
+    test_two_combined_veh_dim_discrete()
+    test_two_not_combined_veh_dim_discrete()
+    test_sim_end()
+    test_two_combined_veh_dim_discrete_global_sensor()
+    test_timestep()

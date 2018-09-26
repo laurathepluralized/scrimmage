@@ -76,52 +76,54 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
 
     // are we learning (true), or just using a trained model (false)?
     learning = scrimmage::get<bool>("learning", params, false);
-    // get model python module
-    const std::string module = params.at("module");
-    py::object py_module = py::module::import(module.c_str());
+    if (!learning) {
+        // get model python module
+        const std::string module = params.at("module");
+        py::object py_module = py::module::import(module.c_str());
 
-    // model's action function
-    const std::string py_act_fcn_str = params.at("act_fcn");
-    py_act_fcn = py_module.attr(py_act_fcn_str.c_str());
+        // model's action function
+        const std::string py_act_fcn_str = params.at("act_fcn");
+        py_act_fcn = py_module.attr(py_act_fcn_str.c_str());
 
-    py::list continuous_minima;
-    py::list continuous_maxima;
-    py::list discrete_count;
+        py::list continuous_minima;
+        py::list continuous_maxima;
+        py::list discrete_count;
 
-    // Sensors (with base class ScrimmageOpenAISensor) for non-learning mode
-    for (auto &sens : parent_->sensors()) {
-        auto s_cast =
-            std::dynamic_pointer_cast<scrimmage::sensor::ScrimmageOpenAISensor>(sens.second);
-        if (s_cast) {
-            s_cast->set_observation_space();
-            auto obs_space = s_cast->observation_space;
-            // to_continuous(s_cast->observation_space.continuous_extrema, continuous_minima, continuous_maxima);
-            to_discrete(s_cast->observation_space.discrete_count, discrete_count);
-            sensors.push_back(s_cast);
+        // Sensors (with base class ScrimmageOpenAISensor) for non-learning mode
+        for (auto &sens : parent_->sensors()) {
+            auto s_cast =
+                std::dynamic_pointer_cast<scrimmage::sensor::ScrimmageOpenAISensor>(sens.second);
+            if (s_cast) {
+                s_cast->set_observation_space();
+                auto obs_space = s_cast->observation_space;
+                // to_continuous(s_cast->observation_space.continuous_extrema, continuous_minima, continuous_maxima);
+                to_discrete(s_cast->observation_space.discrete_count, discrete_count);
+                sensors.push_back(s_cast);
+            }
         }
+
+        auto create_obs = [&](py::list &discrete_count, py::list &continuous_maxima) -> py::object {
+
+            int len_discrete = py::len(discrete_count);
+            int len_continuous = py::len(continuous_maxima);
+
+            py::array_t<int> discrete_array(len_discrete);
+            py::array_t<double> continuous_array(len_continuous);
+
+            if (len_discrete > 0 && len_continuous > 0) {
+                py::list obs;
+                obs.append(discrete_array);
+                obs.append(continuous_array);
+                return obs;
+            } else if (len_continuous > 0) {
+                return continuous_array;
+            } else {
+                return discrete_array;
+            }
+        };
+
+        observation = create_obs(discrete_count, continuous_maxima);
     }
-
-    auto create_obs = [&](py::list &discrete_count, py::list &continuous_maxima) -> py::object {
-
-        int len_discrete = py::len(discrete_count);
-        int len_continuous = py::len(continuous_maxima);
-
-        py::array_t<int> discrete_array(len_discrete);
-        py::array_t<double> continuous_array(len_continuous);
-
-        if (len_discrete > 0 && len_continuous > 0) {
-            py::list obs;
-            obs.append(discrete_array);
-            obs.append(continuous_array);
-            return obs;
-        } else if (len_continuous > 0) {
-            return continuous_array;
-        } else {
-            return discrete_array;
-        }
-    };
-
-    observation = create_obs(discrete_count, continuous_maxima);
 
     print_err_on_exit = false;
     return;
