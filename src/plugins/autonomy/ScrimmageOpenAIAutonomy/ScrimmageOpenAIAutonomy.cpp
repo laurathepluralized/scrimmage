@@ -100,6 +100,27 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
             sensors.push_back(s_cast);
         }
     }
+
+    auto create_obs = [&](py::list &discrete_count, py::list &continuous_maxima) -> py::object {
+
+        int len_discrete = py::len(discrete_count);
+        int len_continuous = py::len(continuous_maxima);
+
+        py::array_t<int> discrete_array(len_discrete);
+        py::array_t<double> continuous_array(len_continuous);
+
+        if (len_discrete > 0 && len_continuous > 0) {
+            py::list obs;
+            obs.append(discrete_array);
+            obs.append(continuous_array);
+            return obs;
+        } else if (len_continuous > 0) {
+            return continuous_array;
+        } else {
+            return discrete_array;
+        }
+    };
+
     observation = create_obs(discrete_count, continuous_maxima);
 
     print_err_on_exit = false;

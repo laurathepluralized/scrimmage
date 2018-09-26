@@ -120,9 +120,9 @@ class ScrimmageOpenAIEnv {
     pybind11::object asarray_;
 
  private:
-    /* void to_continuous(std::vector<std::pair<double, double>> &p, */
-    /*                    pybind11::list &minima, */
-    /*                    pybind11::list &maxima); */
-    /*  */
-    /* void to_discrete(std::vector<double> &p, pybind11::list &maxima); */
+    void to_continuous(std::vector<std::pair<double, double>> &p,
+                       pybind11::list &minima,
+                       pybind11::list &maxima);
+
+    void to_discrete(std::vector<double> &p, pybind11::list &maxima);
 };

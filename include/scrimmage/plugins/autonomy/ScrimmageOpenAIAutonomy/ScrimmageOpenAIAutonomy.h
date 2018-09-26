@@ -57,6 +57,10 @@ class ScrimmageOpenAISensor;
 //     std::vector<double> continuous;
 // };
 
+
+
+
+
 namespace autonomy {
 
 class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
@@ -67,6 +71,21 @@ class ScrimmageOpenAIAutonomy : public scrimmage::Autonomy {
     void init(std::map<std::string, std::string> &params) override;
     bool step_autonomy(double t, double dt) override;
 
+    // may move these two back into a library once things start working again
+    void to_continuous(std::vector<std::pair<double, double>> &p,
+                                          pybind11::list &minima,
+                                          pybind11::list &maxima) {
+       for (auto &value : p) {
+           pybind11::list min_max;
+           minima.append(value.first);
+           maxima.append(value.second);
+       }
+    }
+    void to_discrete(std::vector<double> &p, py::list &maxima) {
+       for (auto &value : p) {
+           maxima.append(value);
+       }
+    }
     // additional override
     virtual void set_environment() {}
     virtual std::pair<bool, double> calc_reward(double t, double dt);

@@ -56,42 +56,42 @@ struct EnvValues {
 
 // namespace py_bindings_lib {
 
-void to_continuous(std::vector<std::pair<double, double>> &p,
-                                       pybind11::list &minima,
-                                       pybind11::list &maxima) {
-    for (auto &value : p) {
-        pybind11::list min_max;
-        minima.append(value.first);
-        maxima.append(value.second);
-    }
-}
+//void to_continuous(std::vector<std::pair<double, double>> &p,
+//                                       pybind11::list &minima,
+//                                       pybind11::list &maxima) {
+//    for (auto &value : p) {
+//        pybind11::list min_max;
+//        minima.append(value.first);
+//        maxima.append(value.second);
+//    }
+//}
+//
+//
+//void to_discrete(std::vector<double> &p, py::list &maxima) {
+//    for (auto &value : p) {
+//        maxima.append(value);
+//    }
+//}
 
 
-void to_discrete(std::vector<double> &p, py::list &maxima) {
-    for (auto &value : p) {
-        maxima.append(value);
-    }
-}
-
-
-py::object create_obs(py::list &discrete_count, py::list &continuous_maxima) {
-    int len_discrete = py::len(discrete_count);
-    int len_continuous = py::len(continuous_maxima);
-
-    py::array_t<int> discrete_array(len_discrete);
-    py::array_t<double> continuous_array(len_continuous);
-
-    if (len_discrete > 0 && len_continuous > 0) {
-        py::list obs;
-        obs.append(discrete_array);
-        obs.append(continuous_array);
-        return obs;
-    } else if (len_continuous > 0) {
-        return continuous_array;
-    } else {
-        return discrete_array;
-    }
-}
+//py::object create_obs(py::list &discrete_count, py::list &continuous_maxima) {
+//    int len_discrete = py::len(discrete_count);
+//    int len_continuous = py::len(continuous_maxima);
+//
+//    py::array_t<int> discrete_array(len_discrete);
+//    py::array_t<double> continuous_array(len_continuous);
+//
+//    if (len_discrete > 0 && len_continuous > 0) {
+//        py::list obs;
+//        obs.append(discrete_array);
+//        obs.append(continuous_array);
+//        return obs;
+//    } else if (len_continuous > 0) {
+//        return continuous_array;
+//    } else {
+//        return discrete_array;
+//    }
+//}
 
 
 // }  // namespace py_bindings_lib
