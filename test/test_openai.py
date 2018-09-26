@@ -32,6 +32,7 @@ A Long description goes here.
 
 import xml.etree.ElementTree as ET
 import copy
+import inspect
 import signal
 
 import numpy as np
@@ -94,6 +95,8 @@ def _write_temp_mission(x_discrete, ctrl_y, y_discrete, num_actors, end):
     autonomy_node.attrib['x_discrete'] = str(x_discrete)
     autonomy_node.attrib['y_discrete'] = str(y_discrete)
     autonomy_node.attrib['ctrl_y'] = str(ctrl_y)
+    autonomy_node.attrib['learning'] = str('true')
+    print(locals())
 
     if num_actors == 2:
         entity_node2 = copy.deepcopy(root.find('entity'))
@@ -114,6 +117,7 @@ def test_one_dim_discrete():
     global_sensor = False
     env, obs, total_reward = \
         _run_test(VERSION, combine_actors, global_sensor, _get_action)
+    import ipdb; ipdb.set_trace()
 
     assert len(obs[0]) == 1
     assert obs[0][0] == 0
@@ -306,12 +310,12 @@ def test_timestep():
 
 if __name__ == '__main__':
     test_one_dim_discrete()
-    test_two_dim_discrete()
-    test_one_dim_continuous()
-    test_two_dim_continuous()
-    test_two_dim_tuple()
-    test_two_combined_veh_dim_discrete()
-    test_two_not_combined_veh_dim_discrete()
-    test_sim_end()
-    test_two_combined_veh_dim_discrete_global_sensor()
-    test_timestep()
+    # test_two_dim_discrete()
+    # test_one_dim_continuous()
+    # test_two_dim_continuous()
+    # test_two_dim_tuple()
+    # test_two_combined_veh_dim_discrete()
+    # test_two_not_combined_veh_dim_discrete()
+    # test_sim_end()
+    # test_two_combined_veh_dim_discrete_global_sensor()
+    # test_timestep()

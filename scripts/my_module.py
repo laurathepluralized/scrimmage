@@ -7,4 +7,5 @@ def _get_action(i):
     Argument:
     i -- the state the agent is in
     """
-    return np.array([1, 1] if i < 100 else [0, 0], dtype=int)
+    # return np.array([1, 1] if i < 100 else [0, 0], dtype=int)
+    return np.array([1] if i < 100 else [0], dtype=int)

@@ -95,7 +95,7 @@ void ScrimmageOpenAIAutonomy::init(std::map<std::string, std::string> &params) {
         if (s_cast) {
             s_cast->set_observation_space();
             auto obs_space = s_cast->observation_space;
-            to_continuous(s_cast->observation_space.continuous_extrema, continuous_minima, continuous_maxima);
+            // to_continuous(s_cast->observation_space.continuous_extrema, continuous_minima, continuous_maxima);
             to_discrete(s_cast->observation_space.discrete_count, discrete_count);
             sensors.push_back(s_cast);
         }

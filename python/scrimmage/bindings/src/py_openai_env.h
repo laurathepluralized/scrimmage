@@ -105,10 +105,10 @@ class ScrimmageOpenAIEnv {
     void scrimmage_memory_cleanup();
     int loop_number_ = 0;
 
-    // pybind11::object create_space(
-    //         pybind11::list discrete_maxima,
-    //         pybind11::list continuous_minima,
-    //         pybind11::list continuous_maxima);
+    pybind11::object create_space(
+            pybind11::list discrete_maxima,
+            pybind11::list continuous_minima,
+            pybind11::list continuous_maxima);
 
     pybind11::object get_gym_space(const std::string &type);
     bool is_gym_instance(pybind11::object &obj, const std::string &type);
