@@ -96,7 +96,6 @@ def _write_temp_mission(x_discrete, ctrl_y, y_discrete, num_actors, end):
     autonomy_node.attrib['y_discrete'] = str(y_discrete)
     autonomy_node.attrib['ctrl_y'] = str(ctrl_y)
     autonomy_node.attrib['learning'] = str('true')
-    print(locals())
 
     if num_actors == 2:
         entity_node2 = copy.deepcopy(root.find('entity'))

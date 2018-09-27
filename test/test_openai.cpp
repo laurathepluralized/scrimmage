@@ -153,11 +153,11 @@ class OpenAIPybindTesting : public testing::Test {
 // https://github.com/google/googletest/blob/master/googletest/docs/faq.md#can-i-derive-a-test-fixture-from-another
 
 
-TEST_F(OpenAIPybindTesting, test_write_file) {
-    const std::string mission = "straight.xml";
-    read_original_mission(mission);
-    const std::string newmission = ".straight.xml";
-    rewrite_mission(newmission);
+//TEST_F(OpenAIPybindTesting, test_write_file) {
+//    const std::string mission = "straight.xml";
+//    read_original_mission(mission);
+//    const std::string newmission = ".straight.xml";
+//    rewrite_mission(newmission);
 
     // auto log_dir = sc::run_test(mission);
     //
@@ -173,11 +173,12 @@ TEST_F(OpenAIPybindTesting, test_write_file) {
     // const int row = csv.rows() - 1;
     // double collisions = csv.at(row, "team_coll");
     // EXPECT_GT(collisions, 0); // expect collisions
-}
+//}
 
 
 TEST_F(OpenAIPybindTesting, test_one_dim_discrete) {
 
+    auto log_dir = sc::run_test(".rlsimple.xml");
 //    """A single agent along the x-axis."""
 //    def _get_action(i):
 //        return 1 if i < 100 else 0
