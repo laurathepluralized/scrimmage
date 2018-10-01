@@ -30,42 +30,36 @@
  *
  */
 
-#ifndef INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_RLSIMPLE_RLSIMPLE_H_
-#define INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_RLSIMPLE_RLSIMPLE_H_
+#ifndef INCLUDE_SCRIMMAGE_PLUGINS_METRICS_RLSIMPLEMETRICS_RLSIMPLEMETRICS_H_
+#define INCLUDE_SCRIMMAGE_PLUGINS_METRICS_RLSIMPLEMETRICS_RLSIMPLEMETRICS_H_
 
-#include <scrimmage/plugins/autonomy/ScrimmageOpenAIAutonomy/ScrimmageOpenAIAutonomy.h>
-#include <scrimmage/pubsub/Publisher.h>
+#include <scrimmage/metrics/Metrics.h>
+#include <scrimmage/parse/ParseUtils.h>
 
 #include <map>
+#include <set>
 #include <string>
-#include <utility>
+
+namespace sc = scrimmage;
 
 namespace scrimmage {
-namespace autonomy {
+namespace metrics {
 
-class RLSimple : public ScrimmageOpenAIAutonomy {
+class RLSimpleMetrics : public scrimmage::Metrics {
  public:
-    void init(std::map<std::string, std::string> &params) override;
-    bool step_autonomy(double t, double dt) override;
-
-    void set_environment() override;
-    std::pair<bool, double> calc_reward(double t, double dt) override;
-
-    void send_metric_msg();
-
+    RLSimpleMetrics();
+    virtual std::string name() override { return std::string("RLSimpleMetrics"); }
+    virtual void init(std::map<std::string, std::string> &params) override;
+    virtual bool step_metrics(double t, double dt) override;
+    virtual void calc_team_scores() override;
+    virtual void print_team_summaries() override;
  protected:
-    double radius_;
-
-    bool x_discrete_ = true;
-
-    bool ctrl_y_ = false;
-    bool y_discrete_ = true;
-
-    uint8_t output_vel_x_idx_ = 0;
-    uint8_t output_vel_y_idx_ = 0;
-    scrimmage::PublisherPtr metric_pub_;
+    std::map<int, double> rewards_;
+    std::map<std::string, std::string> params_;
+    bool initialized_ = false;
+ private:
 };
-} // namespace autonomy
-} // namespace scrimmage
 
-#endif // INCLUDE_SCRIMMAGE_PLUGINS_AUTONOMY_RLSIMPLE_RLSIMPLE_H_
+} // namespace metrics
+} // namespace scrimmage
+#endif // INCLUDE_SCRIMMAGE_PLUGINS_METRICS_RLSIMPLEMETRICS_RLSIMPLEMETRICS_H_

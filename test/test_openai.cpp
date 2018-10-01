@@ -32,6 +32,8 @@
 
 #include <gtest/gtest.h>
 
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 #include <scrimmage/python/py_bindings_lib.h>
 #include <scrimmage/plugins/sensor/ScrimmageOpenAISensor/ScrimmageOpenAISensor.h>
 #include <scrimmage/autonomy/Autonomy.h>
@@ -64,10 +66,10 @@ class OpenAIPybindTesting : public testing::Test {
 
     // Pybind stuff
     py::module np = py::module::import("numpy");
-    pybind11::object py_act_fcn;
-    pybind11::object asarray = np.attr("asarray");
-    py::object np_array = np.attr("array");
-    py::object np_float32 = np.attr("float32");
+    /* pybind11::object py_act_fcn; */
+    /* pybind11::object asarray = np.attr("asarray"); */
+    /* py::object np_array = np.attr("array"); */
+    /* py::object np_float32 = np.attr("float32"); */
 
 //    // get model python module
 //    const std::string module = params.at("module");
@@ -81,36 +83,36 @@ class OpenAIPybindTesting : public testing::Test {
     rapidxml::xml_document<> doc_;
     std::string xml_content_ = "";
 
-    void read_original_mission(std::string mission) {
-        auto res = sc::FileSearch().find_mission(mission);
-        if (!res) {
-            cout << "Mission " << mission << " not found!" << endl;
-        } else {
-            cout << "Mission is " << mission << endl;
-            cout << "at " << *res << endl;
-        }
-
-        // TODO: Replace this with pybind ElementTree
-        if (!mp_.parse(*res)) {
-            cout << "Mission parsing failed!" << endl;
-            return;
-        }
-    }
-
-    void rewrite_mission(const std::string& newmission) {
-        // TODO: Replace this with pybind ElementTree
-        std::ofstream temp_mission(newmission);
-        cout << "newmission is " << newmission << endl;
-
-        mp_.xml_doc(doc_, xml_content_);
-        std::cout << "xml content is " << xml_content_;
-        temp_mission << doc_;
-        cout << "Check output file!" << endl;
-        temp_mission.close();
-    }
-
-    void write_temp_mission(const std::string& mission, bool x_discrete_,
-            bool ctrl_y_, bool y_discrete_, int num_actors_, double end_) {
+//    void read_original_mission(std::string mission) {
+//        auto res = sc::FileSearch().find_mission(mission);
+//        if (!res) {
+//            cout << "Mission " << mission << " not found!" << endl;
+//        } else {
+//            cout << "Mission is " << mission << endl;
+//            cout << "at " << *res << endl;
+//        }
+//
+//        // TODO: Replace this with pybind ElementTree
+//        if (!mp_.parse(*res)) {
+//            cout << "Mission parsing failed!" << endl;
+//            return;
+//        }
+//    }
+//
+//    void rewrite_mission(const std::string& newmission) {
+//        // TODO: Replace this with pybind ElementTree
+//        std::ofstream temp_mission(newmission);
+//        cout << "newmission is " << newmission << endl;
+//
+//        mp_.xml_doc(doc_, xml_content_);
+//        std::cout << "xml content is " << xml_content_;
+//        temp_mission << doc_;
+//        cout << "Check output file!" << endl;
+//        temp_mission.close();
+//    }
+//
+//    void write_temp_mission(const std::string& mission, bool x_discrete_,
+//            bool ctrl_y_, bool y_discrete_, int num_actors_, double end_) {
 //        tree = ET.parse(scrimmage.find_mission(MISSION_FILE))
 //        root = tree.getroot()
 //
@@ -129,13 +131,13 @@ class OpenAIPybindTesting : public testing::Test {
 //        }
 //
 //        tree.write(TEMP_MISSION_FILE)
-    }
+//    }
 
-    void get_module_name_from_test() {
-        // this neat trick courtesy of
-        // https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#getting-the-current-tests-name
-        module_ = ::testing::UnitTest::GetInstance()->current_test_info()->name();
-    }
+//    void get_module_name_from_test() {
+//        // this neat trick courtesy of
+//        // https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#getting-the-current-tests-name
+//        module_ = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+//    }
 
 
     std::string module_;
@@ -178,24 +180,26 @@ class OpenAIPybindTesting : public testing::Test {
 
 TEST_F(OpenAIPybindTesting, test_one_dim_discrete) {
 
-    auto log_dir = sc::run_test(".rlsimple.xml");
+    std::cout << "starting test" << std::endl;
+    auto log_dir = sc::run_test("test_one_dim_discrete.xml");
 //    """A single agent along the x-axis."""
-//    def _get_action(i):
-//        return 1 if i < 100 else 0
-//
-//    std::cout << "scrimmage-v0" << std::endl;
-//    _write_temp_mission(x_discrete=True, ctrl_y=False, y_discrete=True,
-//                        num_actors=1, end=1000)
-//    combine_actors = False
-//    global_sensor = False
-//    env, obs, total_reward = _run_test(VERSION, combine_actors, global_sensor, _get_action)
-//
-//    assert len(obs[0]) == 1
-//    assert obs[0][0] == 0
-//    assert isinstance(env.action_space, gym.spaces.Discrete)
-//    assert isinstance(env.observation_space, gym.spaces.Box)
-//    assert env.action_space.n == 2
-      // EXPECT_EQ(total_reward, 4);
+    std::cout << "ran test" << std::endl;
+    bool success = log_dir ? true : false;
+    std::cout << "checked for log dir" << std::endl;
+    EXPECT_TRUE(success);
+    if (!log_dir) return;
+    std::cout << "found log dir" << std::endl;
+
+    sc::CSV csv;
+    bool summary_found = csv.read_csv(*log_dir + "/summary.csv");
+    EXPECT_TRUE(summary_found);
+    std::cout << "checked for summary" << std::endl;
+    if (!summary_found) return;
+    std::cout << "found summary" << std::endl;
+
+    const int row = csv.rows() - 1;
+    double total_reward = csv.at(row, "reward");
+    EXPECT_EQ(total_reward, 4);
 }
 
 /*

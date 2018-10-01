@@ -31,8 +31,10 @@
  */
 
 #include <scrimmage/math/State.h>
+#include <scrimmage/entity/Entity.h>
 #include <scrimmage/parse/ParseUtils.h>
 #include <scrimmage/plugin_manager/RegisterPlugin.h>
+#include <scrimmage/msgs/RLTestMsgs.pb.h>
 
 #include <scrimmage/plugins/autonomy/RLSimple/RLSimple.h>
 
@@ -40,6 +42,7 @@
 
 REGISTER_PLUGIN(scrimmage::Autonomy, scrimmage::autonomy::RLSimple, RLSimple_plugin)
 
+namespace sc = scrimmage;
 namespace scrimmage {
 namespace autonomy {
 
@@ -60,6 +63,8 @@ void RLSimple::init(std::map<std::string, std::string> &params) {
     vars_.output(output_vel_z_idx, 0);
 
     radius_ = std::stod(params.at("radius"));
+
+    metric_pub_ = advertise("GlobalNetwork", "RLSimpleScore");
 
     ScrimmageOpenAIAutonomy::init(params);
 }
@@ -111,8 +116,27 @@ bool RLSimple::step_autonomy(double t, double dt) {
 
     vars_.output(output_vel_x_idx_, x_vel);
     vars_.output(output_vel_y_idx_, y_vel);
+    if (!learning) {
+        // This runs calc_reward and sends the reward to the metrics plugin
+        // Not necessary in learning mode
+        send_metric_msg();
+    }
     return step_status;
 }
+
+void RLSimple::send_metric_msg() {
+    std::pair<bool, double> rew = calc_reward(0, 0);
+    if (rew.second > 0) {
+        auto msg = std::make_shared<sc::Message<RLTestMsgs::Reward>>();
+        msg->data.set_sender_id(parent_->id().id());
+        msg->data.set_sender_team_id(parent_->id().team_id());
+        msg->data.set_reward(rew.second);
+        metric_pub_->publish(msg);
+    }
+}
+
+
+
 
 } // namespace autonomy
 } // namespace scrimmage
