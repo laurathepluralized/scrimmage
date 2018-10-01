@@ -65,7 +65,7 @@ class OpenAIPybindTesting : public testing::Test {
     scrimmage::MissionParse mp_;
 
     // Pybind stuff
-    py::module np = py::module::import("numpy");
+    // py::module np = py::module::import("numpy");
     /* pybind11::object py_act_fcn; */
     /* pybind11::object asarray = np.attr("asarray"); */
     /* py::object np_array = np.attr("array"); */
