@@ -26,7 +26,7 @@
  * @version 0.1.0
  * @brief Brief file description.
  * @section DESCRIPTION
- * A Long description goes here.
+ * A int64 description goes here.
  *
  */
 
@@ -44,6 +44,12 @@
 #include <vector>
 #include <deque>
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_utility.hpp>
+#include <boost/graph/graphml.hpp>
+#include <boost/property_map/dynamic_property_map.hpp>
+#include <boost/property_map/property_map.hpp>
+
 namespace scrimmage {
 namespace interaction {
 
@@ -57,6 +63,41 @@ class GraphInteraction : public scrimmage::EntityInteraction {
 
     unsigned int num_nodes() { return num_nodes_; }
  protected:
+    struct GraphData {
+        std::string Name;
+    };
+
+    struct NodeProperties {
+        uint64_t osmid;           // d0 in non-simplified
+        double x;               // d1 in non-simplified
+        double y;               // d2 in non-simplified
+//        std::string geometry;        // d3 in non-simplified
+//        std::string xcoord;          // d4 in non-simplified
+//        std::string ycoord;          // d5 in non-simplified
+//        std::string highway;         // d6 in non-simplified
+//        std::string ref;             // d7 in non-simplified
+
+    };
+
+    struct EdgeProperties {
+        std::string geometry;        // d8 in non-simplified
+        std::string highway;         // d9 in non-simplified
+        double length;          // d10 in non-simplified
+        // std::string oneway;          // d11 in non-simplified
+        int osmid;           // d12 in non-simplified
+        std::string name;            // d13 in non-simplified
+        // std::string lanes;           // d14 in non-simplified
+        // std::string ref;             // d15 in non-simplified
+        // std::string bridge;          // d16 in non-simplified
+
+    };
+
+    typedef boost::adjacency_list<
+        boost::vecS,
+        boost::vecS,
+        boost::directedS,
+        NodeProperties, EdgeProperties> Graph;
+    Graph mygraph;
  private:
     bool vis_graph_ = true;
     PublisherPtr pub_graph_;
