@@ -84,7 +84,7 @@ class GraphInteraction : public scrimmage::EntityInteraction {
         std::string highway;         // d9 in non-simplified
         double length;          // d10 in non-simplified
         // std::string oneway;          // d11 in non-simplified
-        int osmid;           // d12 in non-simplified
+        std::string osmid;           // d12 in non-simplified
         std::string name;            // d13 in non-simplified
         // std::string lanes;           // d14 in non-simplified
         // std::string ref;             // d15 in non-simplified
@@ -97,7 +97,7 @@ class GraphInteraction : public scrimmage::EntityInteraction {
         boost::vecS,
         boost::directedS,
         NodeProperties, EdgeProperties> Graph;
-    Graph mygraph;
+    Graph g_;
  private:
     bool vis_graph_ = true;
     PublisherPtr pub_graph_;
