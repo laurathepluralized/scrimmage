@@ -47,8 +47,6 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/graphml.hpp>
-#include <boost/property_map/dynamic_property_map.hpp>
-#include <boost/property_map/property_map.hpp>
 
 namespace scrimmage {
 namespace interaction {
@@ -61,49 +59,37 @@ class GraphInteraction : public scrimmage::EntityInteraction {
     bool step_entity_interaction(std::list<scrimmage::EntityPtr> &ents,
                                     double t, double dt) override;
 
-    unsigned int num_nodes() { return num_nodes_; }
  protected:
     struct GraphData {
         std::string Name;
     };
 
     struct NodeProperties {
-        uint64_t osmid;           // d0 in non-simplified
-        double x;               // d1 in non-simplified
-        double y;               // d2 in non-simplified
-//        std::string geometry;        // d3 in non-simplified
-//        std::string xcoord;          // d4 in non-simplified
-//        std::string ycoord;          // d5 in non-simplified
-//        std::string highway;         // d6 in non-simplified
-//        std::string ref;             // d7 in non-simplified
-
+        uint64_t osmid;
+        double x;
+        double y;
     };
 
     struct EdgeProperties {
-        std::string geometry;        // d8 in non-simplified
-        std::string highway;         // d9 in non-simplified
-        double length;          // d10 in non-simplified
-        // std::string oneway;          // d11 in non-simplified
-        std::string osmid;           // d12 in non-simplified
-        std::string name;            // d13 in non-simplified
-        // std::string lanes;           // d14 in non-simplified
-        // std::string ref;             // d15 in non-simplified
-        // std::string bridge;          // d16 in non-simplified
-
+        std::string geometry;
+        std::string highway;
+        double length;
+        std::string osmid;
+        std::string name;
     };
 
     typedef boost::adjacency_list<
-        boost::vecS,
-        boost::vecS,
+        boost::vecS,  // edge storage
+        boost::vecS,   // vertex storage
         boost::directedS,
         NodeProperties, EdgeProperties> Graph;
     Graph g_;
+
  private:
     bool vis_graph_ = true;
     PublisherPtr pub_graph_;
     int id_ = 1;
-    unsigned int num_nodes_ = 0;
 };
-} // namespace interaction
-} // namespace scrimmage
+}  // namespace interaction
+}  // namespace scrimmage
 #endif // INCLUDE_SCRIMMAGE_PLUGINS_INTERACTION_GRAPHINTERACTION_GRAPHINTERACTION_H_

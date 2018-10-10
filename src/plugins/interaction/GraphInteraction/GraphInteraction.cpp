@@ -43,7 +43,7 @@
 #include <scrimmage/proto/ProtoConversions.h>
 #include <scrimmage/msgs/Graph.pb.h>
 
-
+#include <typeinfo>
 #include <memory>
 #include <limits>
 #include <iostream>
@@ -59,8 +59,6 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_utility.hpp>
 #include <boost/graph/graphml.hpp>
-#include <boost/property_map/dynamic_property_map.hpp>
-#include <boost/property_map/property_map.hpp>
 
 using std::cout;
 using std::endl;
@@ -91,7 +89,7 @@ std::ifstream& GotoLine(std::ifstream& file, unsigned int num) {
 
 // Uses graph file to draw graph
 bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
-                               std::map<std::string, std::string> &plugin_params) {
+        std::map<std::string, std::string> &plugin_params) {
     pub_graph_ = advertise("GlobalNetwork", "Graph");
     std::string default_file_name = "default";
     std::string graph_file_name =
@@ -122,36 +120,23 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
     dp.property("osmid", boost::get(&NodeProperties::osmid, g_));
     dp.property("x", boost::get(&NodeProperties::x, g_));
     dp.property("y", boost::get(&NodeProperties::y, g_));
-//    dp.property("geometry", boost::get(&NodeProperties::geometry, g_));
-//    dp.property("xcoord", boost::get(&NodeProperties::xcoord, g_));
-//    dp.property("ycoord", boost::get(&NodeProperties::ycoord, g_));
-//    dp.property("highway", boost::get(&NodeProperties::highway, g_));
-//    dp.property("ref", boost::get(&NodeProperties::ref, g_));
 
     dp.property("geometry", boost::get(&EdgeProperties::geometry, g_));
-    dp.property("highway", boost::get(&EdgeProperties::highway, g_));
     dp.property("length", boost::get(&EdgeProperties::length, g_));
-    // dp.property("oneway", boost::get(&EdgeProperties::oneway, g_));
     dp.property("osmid", boost::get(&EdgeProperties::osmid, g_));
     dp.property("name", boost::get(&EdgeProperties::name, g_));
-    // dp.property("lanes", boost::get(&EdgeProperties::lanes, g_));
-    // dp.property("ref", boost::get(&EdgeProperties::ref, g_));
-    // dp.property("bridge", boost::get(&EdgeProperties::bridge, g_));
 
     if (graph_file.is_open()) {
         boost::read_graphml(graph_file, g_, dp);
         cout << "read graph file" << endl;
+        graph_file.close();
     }
 
-    // Graph::vertex_iterator vertex_it, vertex_end;
-    Graph::adjacency_iterator neigh_it, neigh_end;
-    // std::tie(vertex_it, vertex_end) = boost::vertices(g_);
     std::pair<boost::adjacency_list<>::vertex_iterator,
         boost::adjacency_list<>::vertex_iterator> vs = boost::vertices(g_);
 
-    uint64_t node_counter = 0;
     std::map<uint64_t, Eigen::Vector3d> nodes;
-    std::map<uint64_t, uint64_t> osmid_to_boost_vert;
+    std::map<uint64_t, uint64_t> boost_vert_to_osmid;
     std::map<uint64_t, std::pair<double, double>> osmid_to_lon_lat;
 
     auto graph_msg = std::make_shared<sc::Message<sm::Graph>>();
@@ -160,87 +145,65 @@ bool GraphInteraction::init(std::map<std::string, std::string> &mission_params,
         // double longitude = boost::get(&NodeProperties::x, g_, *vs.first);
         // double latitude = boost::get(&NodeProperties::y, g_, *vs.first);
         // uint64_t this_osmid = boost::get(&NodeProperties::osmid, g_, *vs.first);
+        // NOTE: the above three lines are equivalent to the below three lines
         double longitude = g_[*vs.first].x;
         double latitude = g_[*vs.first].y;
         double this_osmid = g_[*vs.first].osmid;
-        osmid_to_boost_vert[this_osmid] = *vs.first;
+
+        boost_vert_to_osmid[*vs.first] = this_osmid;
         osmid_to_lon_lat[this_osmid].first = longitude;
         osmid_to_lon_lat[this_osmid].second = latitude;
+
         double x, y, z;
         parent_->projection()->Forward(latitude, longitude, 0.0, x, y, z);
-        z = 200;  // dummy value for now
         nodes[this_osmid] = Eigen::Vector3d(x, y, z);
         auto node_ptr = graph_msg->data.add_nodes();
         node_ptr->set_id(this_osmid);
         sc::set(node_ptr->mutable_point(), nodes[this_osmid]);
-        node_counter++;
-        // TODO: Here or elsewhere, figure out why I can't just iterate over
-        // edges in the same way I do with nodes. Why won't this work?!
-        // cout << boost::out_edges(*vs.first, g_) << endl;
-        // std::pair<boost::adjacency_list<>::edge_iterator,
-        //     boost::adjacency_list<>::edge_iterator> es = boost::out_edges(*vs.first, g_);
-        // for (; es.first != es.second; ++es.first) {
-        //     cout << "out edge " << *es.first << endl;
-        // }
     }
-    cout << "final node count is " << node_counter << endl;
-    cout << "boost says num_vertices is " << num_vertices(g_) << endl;
 
+    auto es = boost::edges(g_);
+    for (; es.first != es.second; ++es.first) {
+        uint64_t id_start = boost_vert_to_osmid[boost::source(*es.first, g_)];
+        uint64_t id_end = boost_vert_to_osmid[boost::target(*es.first, g_)];
 
+        auto edge_ptr = graph_msg->data.add_edges();
+        edge_ptr->set_start_node_id(id_start);
+        edge_ptr->set_end_node_id(id_end);
+        edge_ptr->set_weight(g_[*es.first].length);
+        edge_ptr->set_label(g_[*es.first].name);
 
-        /* // Read the nodes and edges */
-        /* unsigned int edge_counter = 0; */
-        /* while (std::getline(graph_file, line)) { */
-        /*     std::vector<std::string> words; */
-        /*     boost::split(words, line, [](char c) { return c == ' '; }); */
-        /*  */
-        /*     // is edge */
-        /*         edge_counter++; */
-        /*         int id_start = std::stoi(words[0]), id_end = std::stoi(words[1]); */
-        /*         double length = std::stod(words[2]); */
-        /*  */
-        /*         bool edge_nodes_exist = */
-        /*             nodes.count(id_start) > 0 && nodes.count(id_end) > 0; // reality check */
-        /*         if (edge_nodes_exist) { */
-        /*             auto edge_ptr = graph_msg->data.add_edges(); */
-        /*             edge_ptr->set_start_node_id(id_start); */
-        /*             edge_ptr->set_end_node_id(id_end); */
-        /*             edge_ptr->set_weight(length); */
-        /*  */
-        /*             // Visualize the Edges */
-        /*             if (vis_graph_) { */
-        /*                 auto edge_shape = std::make_shared<scrimmage_proto::Shape>(); */
-        /*                 edge_shape->set_persistent(true); */
-        /*                 edge_shape->set_opacity(1.0); */
-        /*                 scrimmage::set(edge_shape->mutable_color(), 0, 0, 0); */
-        /*                 scrimmage::set(edge_shape->mutable_line()->mutable_start(), nodes[id_start]); */
-        /*                 scrimmage::set(edge_shape->mutable_line()->mutable_end(), nodes[id_end]); */
-        /*                 draw_shape(edge_shape); */
-        /*             } */
-        /*         } */
-        /*     } */
-        /* } */
-        pub_graph_->publish(graph_msg);
-
+        // Visualize the edges
         if (vis_graph_) {
-            int counter_viz = 0;
-            auto node_shape = std::make_shared<scrimmage_proto::Shape>();
-            node_shape->set_persistent(true);
-            for (auto node : nodes) {
-                scrimmage::set(node_shape->mutable_pointcloud()->add_point(),
-                        node.second[0], node.second[1], node.second[2]);
-                sc::set(node_shape->mutable_pointcloud()->add_color(),
-                        0, 0, 255);
-                if (counter_viz % 1000 == 0) {
-                    cout << counter_viz << endl;
-                }
-                counter_viz++;
-            }
-            node_shape->mutable_pointcloud()->set_size(6);
-            draw_shape(node_shape);
+            auto edge_shape = std::make_shared<scrimmage_proto::Shape>();
+            edge_shape->set_persistent(true);
+            edge_shape->set_opacity(1.0);
+            scrimmage::set(edge_shape->mutable_color(), 0, 0, 0);
+            scrimmage::set(edge_shape->mutable_line()->mutable_start(), nodes[id_start]);
+            scrimmage::set(edge_shape->mutable_line()->mutable_end(), nodes[id_end]);
+            draw_shape(edge_shape);
         }
+    }
+    pub_graph_->publish(graph_msg);
 
-        graph_file.close();
+    // Visualize the nodes
+    if (vis_graph_) {
+        int counter_viz = 0;
+        auto node_shape = std::make_shared<scrimmage_proto::Shape>();
+        node_shape->set_persistent(true);
+        for (auto node : nodes) {
+            scrimmage::set(node_shape->mutable_pointcloud()->add_point(),
+                    node.second[0], node.second[1], node.second[2]);
+            sc::set(node_shape->mutable_pointcloud()->add_color(),
+                    0, 0, 255);
+            if (counter_viz % 1000 == 0) {
+                cout << counter_viz << endl;
+            }
+            counter_viz++;
+        }
+        node_shape->mutable_pointcloud()->set_size(6);
+        draw_shape(node_shape);
+    }
 
     return true;
 }
