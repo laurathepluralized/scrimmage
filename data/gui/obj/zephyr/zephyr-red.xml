@@ -4,8 +4,6 @@
   <model>wing.obj</model>
   <texture>wing-red.png</texture>
   <!-- <visual_scale>0.004598789</visual_scale> -->
-  <!-- <visual_scale>0.000658892</visual_scale> --> <!-- 1 m width -->
-  <!-- <visual_scale>0.0329446</visual_scale> <!&#45;&#45; 50 m width &#45;&#45;> -->
-  <visual_scale>0.0494169</visual_scale> <!-- 75 m width -->
+  <visual_scale>0.000658892</visual_scale> <!-- 1 m width -->
   <visual_rpy>0 0 90</visual_rpy>
 </params>
