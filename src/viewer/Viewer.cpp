@@ -67,7 +67,7 @@ bool Viewer::init(const std::shared_ptr<MissionParse>& mp,
     renderWindowInteractor_ = vtkSmartPointer<vtkRenderWindowInteractor>::New();
     renderWindowInteractor_->SetRenderWindow(renderWindow_);
 
-    renderer_->SetBackground(0, 0, 0);
+    renderer_->SetBackground(190, 190, 190);
 
     // Setup camera
     vtkSmartPointer<vtkCamera> camera =

@@ -155,11 +155,11 @@ Updater::Updater() :
 void Updater::init(const std::string &log_dir, double dt) {
     // Create a default grid:
     grid_ = std::make_shared<Grid>();
-    grid_->create(20, 1, renderer_);
+    // grid_->create(100, 1, renderer_);
 
     // Create a default origin:
-    origin_axes_ = std::make_shared<OriginAxes>();
-    origin_axes_->create(1, renderer_);
+    // origin_axes_ = std::make_shared<OriginAxes>();
+    // origin_axes_->create(1, renderer_);
 
     renderer_->SetNearClippingPlaneTolerance(0.00001);
 
