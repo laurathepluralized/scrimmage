@@ -211,67 +211,67 @@ int main(int argc, char *argv[]) {
     sigaction(SIGTERM, &sa, NULL);
 
     if (optind >= argc || argc < 2) {
-        cout << "usage: " << argv[0] << " /path/to/log-dir --focal_point=0,1,2000" << endl;
+        cout << "usage: " << argv[0] << " /path/to/log-dir-parent --focal_point=0,1,2000" << endl;
         return -1;
     }
 
-    for (fs::directory_entry& entry : fs::directory_iterator(argv[1])) {
+    std::string thepath = argv[1];
 
-        // Setup Logger for this case
-        std::shared_ptr<sc::Log> log(new sc::Log);
-        log->init(std::string(entry.path().string()), sc::Log::READ);
+    // Setup Logger for this case
+    std::shared_ptr<sc::Log> log(new sc::Log);
+    log->init(thepath, sc::Log::READ);
 
-        sc::InterfacePtr to_gui_interface(new sc::Interface);
-        sc::InterfacePtr from_gui_interface(new sc::Interface);
+    sc::InterfacePtr to_gui_interface(new sc::Interface);
+    sc::InterfacePtr from_gui_interface(new sc::Interface);
 
-        to_gui_interface->set_mode(sc::Interface::shared);
-        from_gui_interface->set_mode(sc::Interface::shared);
+    to_gui_interface->set_mode(sc::Interface::shared);
+    from_gui_interface->set_mode(sc::Interface::shared);
 
-        //// Kick off server thread
-        // std::thread server_thread(&Interface::init_network, &(*incoming_interface_),
-        //                           Interface::server, "localhost", 50051);
+    //// Kick off server thread
+    // std::thread server_thread(&Interface::init_network, &(*incoming_interface_),
+    //                           Interface::server, "localhost", 50051);
 
-        cout << "Frames parsed: " << log->frames().size() << endl;
+    cout << "Frames parsed: " << log->frames().size() << endl;
 
-        std::thread playback(playback_loop, log, from_gui_interface,
-                             to_gui_interface);
-        playback.detach(); // todo
+    std::thread playback(playback_loop, log, from_gui_interface,
+                         to_gui_interface);
+    playback.detach(); // todo
 
-        auto mp = std::make_shared<sc::MissionParse>();
-        mp->set_log_dir("");
+    auto mp = std::make_shared<sc::MissionParse>();
+    mp->set_log_dir(thepath);
 
-        // Get the network parameters from the command line parser
-        std::map<std::string, std::string> camera_params;
-        set_param(vm, camera_params, "local_ip");
-        set_param(vm, camera_params, "local_port");
-        set_param(vm, camera_params, "remote_ip");
-        set_param(vm, camera_params, "remote_port");
-        set_param(vm, camera_params, "pos");
-        set_param(vm, camera_params, "focal_point");
-        // set_param(vm, camera_params, "background_color");
+    // Get the network parameters from the command line parser
+    std::map<std::string, std::string> camera_params;
+    set_param(vm, camera_params, "local_ip");
+    set_param(vm, camera_params, "local_port");
+    set_param(vm, camera_params, "remote_ip");
+    set_param(vm, camera_params, "remote_port");
+    set_param(vm, camera_params, "pos");
+    set_param(vm, camera_params, "focal_point");
+    // set_param(vm, camera_params, "background_color");
 
-        if (camera_params.count("pos") > 0 || camera_params.count("focal_point") > 0) {
-            camera_params["mode"] = "FREE";
-        }
-        sc::Viewer viewer;
-        viewer.set_enable_network(false);
-        viewer.set_incoming_interface(to_gui_interface);
-        viewer.set_outgoing_interface(from_gui_interface);
-
-        double dt;
-        if (log->frames().size() >= 2) {
-            auto frame2 = *(std::next(log->frames().begin(), 1));
-            auto frame1 = log->frames().front();
-            dt = frame2->time() - frame1->time();
-        } else {
-            dt = 1.0e-6;
-        }
-        mp->set_dt(dt);
-
-        viewer.init(mp, camera_params);
-        // viewer.init(mp, {});
-        viewer.run();
+    if (camera_params.count("pos") > 0 || camera_params.count("focal_point") > 0) {
+        camera_params["mode"] = "FREE";
     }
+    sc::Viewer viewer;
+    viewer.set_enable_network(false);
+    viewer.set_incoming_interface(to_gui_interface);
+    viewer.set_outgoing_interface(from_gui_interface);
+
+    double dt;
+    if (log->frames().size() >= 2) {
+        auto frame2 = *(std::next(log->frames().begin(), 1));
+        auto frame1 = log->frames().front();
+        dt = frame2->time() - frame1->time();
+    } else {
+        dt = 1.0e-6;
+    }
+    mp->set_dt(dt);
+
+    viewer.init(mp, camera_params);
+    // viewer.init(mp, {});
+    viewer.run();
+
     cout << "Playback Complete" << endl;
     return 0;
 }

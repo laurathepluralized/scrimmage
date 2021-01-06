@@ -278,6 +278,7 @@ class Updater : public vtkCommand {
                        vtkSmartPointer<vtkActor> &actor,
                        vtkSmartPointer<vtkPolyDataAlgorithm> &source,
                        vtkSmartPointer<vtkPolyDataMapper> &mapper);
+    inline void set_log_dir(std::string logdir) { log_dir_ = logdir; }
 
  protected:
     void get_model_texture(std::string name,

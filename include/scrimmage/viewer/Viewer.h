@@ -65,6 +65,7 @@ class Viewer {
               const std::map<std::string, std::string>& camera_params);
     bool run();
     bool stop();
+    inline void set_log_dir(std::string logdir) { log_dir_ = logdir; }
 
  protected:
     // Create a renderer, render window, and interactor

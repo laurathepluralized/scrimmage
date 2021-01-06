@@ -40,6 +40,8 @@
 #include <scrimmage/viewer/CameraInterface.h>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
 
 namespace scrimmage {
 
@@ -67,13 +69,13 @@ bool Viewer::init(const std::shared_ptr<MissionParse>& mp,
     renderWindowInteractor_ = vtkSmartPointer<vtkRenderWindowInteractor>::New();
     renderWindowInteractor_->SetRenderWindow(renderWindow_);
 
-    renderer_->SetBackground(190, 190, 190);
+    renderer_->SetBackground(130, 130, 130);
 
     // Setup camera
     vtkSmartPointer<vtkCamera> camera =
         vtkSmartPointer<vtkCamera>::New();
     camera->SetViewUp(0, 0, 1);
-    camera->SetPosition(40, 40, 1000);
+    camera->SetPosition(40, 40, 2000);
     camera->SetFocalPoint(0, 0, 0);
 
     // Setup camera interface
@@ -84,8 +86,12 @@ bool Viewer::init(const std::shared_ptr<MissionParse>& mp,
     camera_params_ = camera_params;
     renderer_->SetActiveCamera(camera);
 
+    log_dir_ = mp->log_dir();
     // Render and interact
-    renderWindow_->SetWindowName("SCRIMMAGE");
+    fs::path logpath(log_dir_);
+    const char * lpchar = logpath.string().c_str();
+
+    renderWindow_->SetWindowName(lpchar);
     if (mp->full_screen()) {
         renderWindow_->SetFullScreen(true);
         renderWindow_->FullScreenOn();
@@ -94,7 +100,6 @@ bool Viewer::init(const std::shared_ptr<MissionParse>& mp,
         renderWindow_->SetSize(mp->window_width(), mp->window_height());
     }
 
-    log_dir_ = mp->log_dir();
     dt_ = mp->dt();
 
     // Get network parameters
@@ -130,6 +135,7 @@ bool Viewer::run() {
         vtkSmartPointer<scrimmage::Updater>::New();
     renderWindowInteractor_->AddObserver(vtkCommand::TimerEvent, updater);
     updater->set_renderer(renderer_);
+    updater->set_log_dir(log_dir_);
     updater->set_rwi(renderWindowInteractor_);
     updater->set_incoming_interface(incoming_interface_);
     updater->set_outgoing_interface(outgoing_interface_);
@@ -145,7 +151,7 @@ bool Viewer::run() {
     }
 
     std::string camera_focal_pos_str =
-        get<std::string>("focal_point", camera_params_, "0, 0, 0");
+        get<std::string>("focal_point", camera_params_, "0, 1, 5000");
 
     std::vector<double> camera_focal_pos;
     if (!str2container(camera_focal_pos_str, ",", camera_focal_pos, 3)) {
@@ -160,7 +166,7 @@ bool Viewer::run() {
     updater->set_follow_id(get("follow_id", camera_params_, 1) - 1);
 
     std::string view_mode =
-        boost::to_upper_copy(get<std::string>("mode", camera_params_, "follow"));
+        boost::to_upper_copy(get<std::string>("mode", camera_params_, "free"));
 
     if (view_mode == "FOLLOW") {
         updater->set_view_mode(Updater::ViewMode::FOLLOW);

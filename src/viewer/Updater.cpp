@@ -173,6 +173,7 @@ void Updater::Execute(vtkObject *caller, unsigned long vtkNotUsed(eventId), // N
     update();
 
     vtkRenderWindowInteractor *iren = vtkRenderWindowInteractor::SafeDownCast(caller);
+    // iren->GetRenderWindow()->SetSize(800, 800);
     iren->GetRenderWindow()->Render();
 
     incoming_interface_->gui_msg_mutex.lock();
@@ -1171,7 +1172,7 @@ void Updater::update_contact_visual(std::shared_ptr<ActorContact> &actor_contact
 
         // Setup the overrides based on the data in the message
         std::map<std::string, std::string> overrides;
-        overrides["visual_scale"] = std::to_string(cv->scale());
+        overrides["visual_scale"] = std::to_string(4*cv->scale());
         overrides["visual_rpy"] = std::to_string(cv->rotate(0)) + " " +
             std::to_string(cv->rotate(1)) + " " +
             std::to_string(cv->rotate(2));
@@ -1550,13 +1551,14 @@ void Updater::create_text_display() {
     int text_y_spacing = 30;
     int text_y = 10;
     int text_x = 10;
+    double text_rgb = 0.001;
 
     // Add the time (text) display
     time_actor_ = vtkSmartPointer<vtkTextActor>::New();
     time_actor_->SetInput("000.000 s");
     time_actor_->SetPosition(text_x, text_y);
     time_actor_->GetTextProperty()->SetFontSize(24);
-    time_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    time_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(time_actor_);
     text_y += text_y_spacing;
 
@@ -1565,7 +1567,7 @@ void Updater::create_text_display() {
     view_mode_actor_->SetInput("View: Follow");
     view_mode_actor_->SetPosition(text_x, text_y);
     view_mode_actor_->GetTextProperty()->SetFontSize(24);
-    view_mode_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    view_mode_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(view_mode_actor_);
     text_y += text_y_spacing;
 
@@ -1574,7 +1576,7 @@ void Updater::create_text_display() {
     heading_actor_->SetInput("H: 360.00");
     heading_actor_->SetPosition(text_x, text_y);
     heading_actor_->GetTextProperty()->SetFontSize(24);
-    heading_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    heading_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(heading_actor_);
     text_y += text_y_spacing;
 
@@ -1583,7 +1585,7 @@ void Updater::create_text_display() {
     alt_actor_->SetInput("Alt: 360.00");
     alt_actor_->SetPosition(text_x, text_y);
     alt_actor_->GetTextProperty()->SetFontSize(24);
-    alt_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    alt_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(alt_actor_);
 
     // Add the help menu
@@ -1593,14 +1595,14 @@ void Updater::create_text_display() {
     helpkeys_actor_->SetInput(" ");
     helpkeys_actor_->SetPosition(text_x, 200);
     helpkeys_actor_->GetTextProperty()->SetFontSize(14);
-    helpkeys_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    helpkeys_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(helpkeys_actor_);
     // Add helpmenu values (descriptions)
     helpvalues_actor_ = vtkSmartPointer<vtkTextActor>::New();
     helpvalues_actor_->SetInput(" ");
     helpvalues_actor_->SetPosition(text_x + 120, 200);
     helpvalues_actor_->GetTextProperty()->SetFontSize(14);
-    helpvalues_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    helpvalues_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(helpvalues_actor_);
 
     text_x = 300;
@@ -1610,7 +1612,7 @@ void Updater::create_text_display() {
     warp_actor_->SetInput("50.00 X");
     warp_actor_->SetPosition(text_x, 10);
     warp_actor_->GetTextProperty()->SetFontSize(24);
-    warp_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    warp_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(warp_actor_);
 
     text_x += 100;
@@ -1620,7 +1622,7 @@ void Updater::create_text_display() {
     fps_actor_->SetInput("FPS: 60.0");
     fps_actor_->SetPosition(text_x, 10);
     fps_actor_->GetTextProperty()->SetFontSize(24);
-    fps_actor_->GetTextProperty()->SetColor(1.0, 1.0, 1.0);
+    fps_actor_->GetTextProperty()->SetColor(text_rgb, text_rgb, text_rgb);
     renderer_->AddActor2D(fps_actor_);
 }
 
