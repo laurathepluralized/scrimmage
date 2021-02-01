@@ -345,7 +345,7 @@ void ScrimmageOpenAIEnv::close() {
 
 void ScrimmageOpenAIEnv::seed(pybind11::object _seed) {
     seed_set_ = true;
-    seed_ = _seed.cast<int>();
+    seed_ = _seed.cast<long>();
 }
 
 void ScrimmageOpenAIEnv::filter_ext_ctrl_vec(){
